@@ -48,14 +48,11 @@ public class UrlShortenerController {
 
 		// 1. 저장 (ID 생성)
 		ShortUrl entity = new ShortUrl(originalUrl);
-		ShortUrl saved = shortUrlRepository.save(entity);
+		ShortUrl shortUrl = shortUrlRepository.save(entity);
 
 		// 2. Base62 인코딩
-		String shortKey = base62.encode(saved.getId());
-		saved.assignShortKey(shortKey);
-		
-		// 3. shortKey 저장 (트랜잭션 내에서 자동 저장되지만 명시적으로 저장)
-		shortUrlRepository.save(saved);
+		String shortKey = base62.encode(shortUrl.getId());
+        shortUrl.assignShortKey(shortKey);
 
 		return ResponseEntity.ok(Map.of("key", shortKey));
 	}

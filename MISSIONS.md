@@ -16,10 +16,10 @@
 - **Goal:** 이기종 환경(Mac Client ↔ Windows Server) 간의 네트워크 통신 성공.
 - **Architecture:** `MacBook(Wi-Fi)` -> `Router` -> `Windows(Host)` -> `Docker Container`
 - **Checklist:**
-    - [ ] `.wslconfig` 설정 확인 (Memory 10GB, Processors 6).
-    - [ ] Spring Boot `GET /api/hello` 구현.
-    - [ ] Windows 방화벽 인바운드 규칙(8080) 개방.
-    - [ ] **Verification:** Mac 터미널에서 `curl -v http://[WIN_IP]:8080/api/hello` 성공.
+    - [x] `.wslconfig` 설정 확인 (Memory 10GB, Processors 6).
+    - [x] Spring Boot `GET /api/hello` 구현.
+    - [x] Windows 방화벽 인바운드 규칙(8080) 개방.
+    - [x] **Verification:** Mac 터미널에서 `curl -v http://[WIN_IP]:8080/api/hello` 성공.
 
 ### 🎯 Mission 02. [기능 구현] "Docker Compose로 App + DB 연동"
 - **Goal:** `docker-compose up` 명령 하나로 App과 DB를 동시에 실행하고 비즈니스 로직 검증.
