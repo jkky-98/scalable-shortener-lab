@@ -41,21 +41,26 @@ public class UrlShortenerController {
     }
 
 	// [Mission 2] URL 단축 (Write)
-	@PostMapping("/api/shorten")
-	@Transactional
-	public ResponseEntity<Map<String, String>> shortenUrl(@RequestBody Map<String, String> request) {
-		String originalUrl = request.get("url");
+    @PostMapping("/api/shorten")
+    @Transactional
+    public ResponseEntity<Map<String, String>> shortenUrl(@RequestBody Map<String, String> request) {
+        String originalUrl = request.get("url");
 
-		// 1. 저장 (ID 생성)
-		ShortUrl entity = new ShortUrl(originalUrl);
-		ShortUrl shortUrl = shortUrlRepository.save(entity);
+        // 1. 먼저 ID만 생성해서 DB에 넣습니다. (short_key는 일단 null이나 빈값)
+        ShortUrl entity = new ShortUrl(originalUrl);
+        shortUrlRepository.saveAndFlush(entity); // 즉시 DB에 반영해서 ID 확정
 
-		// 2. Base62 인코딩
-		String shortKey = base62.encode(shortUrl.getId());
-        shortUrl.assignShortKey(shortKey);
+        // 2. 확정된 ID로 Key를 만듭니다.
+        String shortKey = base62.encode(entity.getId());
 
-		return ResponseEntity.ok(Map.of("key", shortKey));
-	}
+        // 3. Key를 업데이트합니다.
+        entity.assignShortKey(shortKey);
+
+        // 4. 명시적으로 한 번 더 저장 (flush는 트랜잭션 종료 시 자동 수행)
+        log.info("Saved ID: {}, Generated Key: {}", entity.getId(), shortKey);
+
+        return ResponseEntity.ok(Map.of("key", shortKey));
+    }
 
     // [Mission 2] 리다이렉트 (Read + AccessLog Write)
     @GetMapping("/api/{key}")
