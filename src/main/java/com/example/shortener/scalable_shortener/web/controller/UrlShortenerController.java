@@ -56,7 +56,6 @@ public class UrlShortenerController {
         // 3. Key를 업데이트합니다.
         entity.assignShortKey(shortKey);
 
-        // 4. 명시적으로 한 번 더 저장 (flush는 트랜잭션 종료 시 자동 수행)
         log.info("Saved ID: {}, Generated Key: {}", entity.getId(), shortKey);
 
         return ResponseEntity.ok(Map.of("key", shortKey));
