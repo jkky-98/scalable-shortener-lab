@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: shortener-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/shortener?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+    depends_on:
+      - db
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'     # 실험실 자원 중 0.5코어 할당
+          memory: 512M    # 램 512MB 제한
+
+  db:
+    image: mysql:8.0
+    container_name: shortener-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=shortener
+    ports:
+      - "3306:3306" # 로컬 DB 툴 접속용
+    volumes:
+      # 로컬에 DB 데이터 저장 (재시작해도 데이터 유지)
+      - ../../mysql-data:/var/lib/mysql
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G

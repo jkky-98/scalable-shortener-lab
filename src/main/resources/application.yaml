@@ -1,3 +1,23 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: scalable-shortener
+  datasource:
+    # Docker 내부 서비스명 'db'를 기본값으로 사용
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://db:3306/shortener?serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # 실무에선 validate를 쓰지만, 편의상 update
+    properties:
+      hibernate:
+        format_sql: false # 로그 깔끔하게 하기 위해 false
+    open-in-view: false # 중요: OSIV 끔 (DB 커넥션 최적화)
+
+logging:
+  level:
+    root: INFO
