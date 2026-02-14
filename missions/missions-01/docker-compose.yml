@@ -10,16 +10,18 @@ services:
       - "8080:8080"
     environment:
       - SERVER_PORT=8080
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/shortener?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/shortener?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=root
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: '0.5'     # 실험실 자원 중 0.5코어 할당
           memory: 512M    # 램 512MB 제한
+    restart: unless-stopped
 
   db:
     image: mysql:8.0
@@ -32,8 +34,15 @@ services:
     volumes:
       # 로컬에 DB 데이터 저장 (재시작해도 데이터 유지)
       - ../../mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     deploy:
       resources:
         limits:
           cpus: '1.0'
           memory: 1G
+    restart: unless-stopped
