@@ -2,6 +2,8 @@
 FROM gradle:8.5-jdk21-alpine AS builder
 WORKDIR /app
 COPY . .
+# gradlew 실행 권한 부여
+RUN chmod +x gradlew
 # 테스트 제외하고 빌드 (시간 절약)
 RUN ./gradlew build -x test --no-daemon
 
