@@ -3,6 +3,7 @@ import { check, sleep } from 'k6';
 import { SharedArray } from 'k6/data';
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080/api';
+const TARGET_VUS = Number(__ENV.TARGET_VUS || 200);
 
 // 1. 키 파일 로드 (같은 폴더에 있는 keys.json)
 const data = new SharedArray('valid keys', function () {
@@ -14,7 +15,7 @@ export const options = {
   // 10초 동안 50명까지 증가 -> 30초 동안 200명 유지 -> 10초 동안 감소
   stages: [
     { duration: '10s', target: 50 },
-    { duration: '30s', target: 200 }, // ★ 여기가 피크 타임
+    { duration: '30s', target: TARGET_VUS }, // ★ 여기가 피크 타임
     { duration: '10s', target: 0 },
   ],
   thresholds: {

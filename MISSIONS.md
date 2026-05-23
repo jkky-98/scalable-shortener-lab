@@ -3,10 +3,11 @@
 각 미션을 수행한 후 얻은 데이터를 이곳에 요약 기록합니다.
 
 | Mission ID | Architecture | VUs | RPS | Avg Latency (ms) | P95 Latency (ms) | Fail Rate (%) | DB CPU (%) | Note (Bottleneck) |
-|:---:|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---|
-| **M-03** | Single App | 50 | - | - | - | - | - | - |
-| **M-05** | 3 Apps + LB | 150 | - | - | - | - | - | - |
-| **M-07** | Redis Cache | 500 | - | - | - | - | - | - |
+|:---:|:---|:---:|:---:|:----------------:|:----------------:|:-------------:|:----------:|:------------------|
+| **M-03** | Single App | 200 | 729 |       126        |       298        |      0%       |    54%     | Stable baseline |
+| **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
+| **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
+| **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
 ---
 
@@ -44,6 +45,10 @@
     - `docker stats` 명령어로 Windows 서버의 DB CPU/Memory 실시간 모니터링.
     - **Note:** Wi-Fi 환경이므로 `http_req_duration`보다 `http_req_waiting` 지표를 신뢰할 것.
 - **Acceptance Criteria:** DB CPU가 100%에 도달하거나 응답 속도가 200ms를 초과하는 정확한 RPS 지점 찾기.
+- **Result (2026-05-23):**
+    - 200 VU: 729 RPS, avg 126ms, p95 298ms, fail 0%.
+    - 400 VU: 927 RPS, avg 184ms, p95 564ms, fail 0%.
+    - Conclusion: Single App + Single MySQL의 지연 시간 기준 한계는 400 VU, 약 900 RPS 부근이다. CPU/Memory가 100%에 닿기 전 p95가 먼저 악화되므로 병목은 CPU 고갈보다 DB 동기 write, DB connection 대기, Tomcat worker 대기 등 queueing으로 추정한다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.

@@ -66,10 +66,18 @@ cd missions/phase-2/tests/k6
 BASE_URL=http://<WINDOWS_LAN_IP>:8080/api k6 run --summary-export mission-03-summary.json mission-03-real.js
 ```
 
+VU를 바꿀 때는 `TARGET_VUS`를 지정한다.
+
+```bash
+BASE_URL=http://<WINDOWS_LAN_IP>:8080/api TARGET_VUS=400 \
+  k6 run --summary-export mission-03-400-summary.json mission-03-real.js
+```
+
 결과 파일:
 
 ```text
 missions/phase-2/tests/k6/mission-03-summary.json
+missions/phase-2/tests/k6/mission-03-400-summary.json
 ```
 
 ## 5. Docker 리소스 수집
