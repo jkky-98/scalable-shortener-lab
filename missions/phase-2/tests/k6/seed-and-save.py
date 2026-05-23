@@ -1,13 +1,11 @@
 import urllib.request
 import urllib.error
 import json
+import os
 import random
 import string
-import time
 
-# 윈도우 서버 주소 (Mission 1에서 찾은 IP)
-# ★ 본인의 윈도우 IP로 꼭 변경하세요!
-BASE_URL = "http://192.168.0.2:8080/api"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8080/api")
 COUNT = 1000  # 생성할 데이터 개수
 OUTPUT_FILE = "keys.json"
 

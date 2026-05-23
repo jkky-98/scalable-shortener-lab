@@ -95,3 +95,4 @@ tests/results/*
 # 예외: 소스 코드나 테스트 설정에 필요한 json은 유지
 !src/**/*.json
 !tests/**/*.json
+!missions/**/tests/k6/*summary.json
