@@ -10,6 +10,7 @@
 | **M-03B** | Batch AccessLog | 400 | 850 |       202        |       685        |      0%       |     -      | Lossless batch, still slower than sync |
 | **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |    14%     | App CPU saturated, slower than batch |
 | **M-03D** | Smart Batch + Rebalanced CPU | 400 | 3332 |        43        |        91        |      0%       |    51%     | App/DB CPU limits both utilized |
+| **M-03D** | Sync + Rebalanced CPU | 400 | 794 |       218        |       661        |      0%       |    53%     | DB write wait dominates |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -146,7 +147,11 @@
     - `access_logs` row count: 224,052 -> 390,708. 증가량 166,656 rows가 k6 request count 166,656과 일치해 로그 유실은 없었다.
     - Docker stats 기준 App CPU는 테스트 중 약 96~101%까지 상승했고, DB CPU도 약 47~51%까지 상승했다. 이는 App 1.0 CPU와 DB 0.5 CPU 제한이 모두 실제로 사용됐음을 보여준다.
     - App memory는 최대 약 350MiB/512MiB(68%), DB memory는 최대 약 407MiB/1GiB(40%)로 메모리 병목은 아니었다.
-    - Conclusion: M-03C의 smart batch 악화는 구조 자체의 한계라기보다 App 0.5 CPU quota가 너무 낮았던 영향이 컸다. App에 1 CPU를 부여하고 DB를 0.5 CPU로 줄인 조건에서는 smart batch가 기존 sync baseline보다 훨씬 높은 처리량과 낮은 p95를 보였다. 다만 같은 리소스 조건의 sync variant는 아직 비교 대상으로 남아 있다.
+- **Result (2026-05-25, SYNC):**
+    - 400 VU sync with rebalanced CPU: 794 RPS, avg 218ms, p95 661ms, fail 0%.
+    - `access_logs` row count: 390,708 -> 430,407. 증가량 39,699 rows가 k6 request count 39,699와 일치해 로그 유실은 없었다.
+    - Docker stats 기준 초반에는 App CPU가 약 99~101%까지 상승했지만, 중후반에는 DB CPU가 약 49~53%로 DB 0.5 CPU 제한에 붙으면서 App CPU가 약 45~55% 수준까지 내려갔다.
+    - Conclusion: 리소스 재분배 조건에서는 sync보다 smart batch가 압도적으로 우수했다. sync는 요청 스레드가 매 요청마다 AccessLog DB insert 완료를 기다리기 때문에 DB 0.5 CPU 제한에서 p95가 661ms까지 악화됐다. 반면 smart batch는 요청 경로에서 write wait를 제거하고 batch writer가 DB CPU를 효율적으로 사용해 3332 RPS, p95 91ms를 달성했다. M-03D 기준 최적 구조는 `App 1.0 CPU / DB 0.5 CPU + SMART_BATCH`다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
