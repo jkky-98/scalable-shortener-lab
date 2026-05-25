@@ -6,7 +6,7 @@
 |:---:|:---|:---:|:---:|:----------------:|:----------------:|:-------------:|:----------:|:------------------|
 | **M-03** | Single App | 200 | 729 |       126        |       298        |      0%       |    54%     | Stable baseline |
 | **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
-| **M-03A** | Async AccessLog | 400 |  -  |        -         |        -         |       -       |     -      | Bottleneck decomposition |
+| **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -67,6 +67,11 @@
     - 테스트 종료 후 executor drain 시간을 둔 뒤 k6 요청 수와 `access_logs` 증가량을 비교.
     - 400 VU 기준 p95 latency가 Mission 03 baseline 대비 개선되는지 확인.
     - App/DB CPU, Memory, PIDs를 함께 기록해 병목 위치를 설명.
+- **Result (2026-05-25):**
+    - 400 VU async: 477 RPS, avg 371ms, p95 1187ms, fail 0%.
+    - `access_logs` row count 확인: 106,726 rows. async 모드에서도 DB 저장 경로는 동작했다.
+    - Docker stats 발췌상 테스트 종료 직후 DB CPU가 82% -> 101%까지 상승했다. 이는 async executor가 로그 write를 제거한 것이 아니라 큐에 적체한 뒤 DB에 밀어 넣는 패턴으로 해석한다.
+    - Conclusion: 단순 `@Async` 기반 AccessLog 저장은 현재 리소스 제한 환경에서 sync baseline보다 악화됐다. DB write 자체가 병목 후보이며, 다음 개선은 batch insert, bounded backpressure, 별도 write buffer, Redis Stream/Kafka 같은 완충 계층을 검토해야 한다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
