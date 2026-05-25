@@ -8,7 +8,7 @@
 | **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
 | **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
 | **M-03B** | Batch AccessLog | 400 | 850 |       202        |       685        |      0%       |     -      | Lossless batch, still slower than sync |
-| **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |     -      | Lossless, slower than batch |
+| **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |    14%     | App CPU saturated, slower than batch |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -122,8 +122,9 @@
 - **Result (2026-05-25):**
     - 400 VU smart batch: 737 RPS, avg 235ms, p95 793ms, fail 0%.
     - `access_logs` row count: 149,248 -> 186,090. 증가량 36,842 rows가 k6 request count 36,842와 일치해 로그 유실은 없었다.
+    - Docker stats 기준 App CPU는 테스트 중 48~50% 부근에 계속 머물렀고, App memory는 최대 약 349MiB/512MiB(68%)까지 증가했다. DB CPU는 대부분 6~14% 수준, DB memory는 약 384MiB/1GiB(38%)로 낮았다.
     - M-03C는 M-03B보다 작은 batch size와 짧은 flush interval을 사용했지만, 결과는 M-03B보다 악화됐다.
-    - Conclusion: flush burst를 줄이는 방향 자체는 타당한 가설이었지만, 현재 리소스 제한에서는 더 잦은 DB batch write가 read redirect 경로와 더 자주 경쟁하면서 p95를 악화시킨 것으로 해석한다. AccessLog write 경로만 계속 미세 조정하기보다, 다음 단계에서는 read 경로의 DB 의존도를 줄이는 cache 계층 또는 read/write 분리를 검증하는 편이 더 유효하다.
+    - Conclusion: flush burst를 줄이는 방향 자체는 타당한 가설이었지만, 현재 리소스 제한에서는 DB가 아니라 App CPU quota와 queue/write orchestration overhead가 더 큰 병목으로 나타났다. AccessLog write 경로만 계속 미세 조정하기보다, 다음 단계에서는 read 경로의 DB 의존도를 줄이는 cache 계층 또는 read/write 분리를 검증하는 편이 더 유효하다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
