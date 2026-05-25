@@ -12,11 +12,13 @@ public class AccessLogProperties {
     private Mode mode = Mode.SYNC;
     private Async async = new Async();
     private Batch batch = new Batch();
+    private SmartBatch smartBatch = new SmartBatch();
 
     public enum Mode {
         SYNC,
         ASYNC,
-        BATCH
+        BATCH,
+        SMART_BATCH
     }
 
     @Getter
@@ -33,5 +35,13 @@ public class AccessLogProperties {
         private int queueCapacity = 20000;
         private int size = 500;
         private long flushIntervalMs = 100;
+    }
+
+    @Getter
+    @Setter
+    public static class SmartBatch {
+        private int queueCapacity = 20000;
+        private int size = 200;
+        private long flushIntervalMs = 50;
     }
 }

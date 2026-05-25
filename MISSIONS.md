@@ -8,6 +8,7 @@
 | **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
 | **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
 | **M-03B** | Batch AccessLog | 400 | 850 |       202        |       685        |      0%       |     -      | Lossless batch, still slower than sync |
+| **M-03C** | Smart Batch AccessLog | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -96,6 +97,28 @@
     - `access_logs` row count: 106,726 -> 149,248. 증가량 42,522 rows가 k6 request count 42,522와 일치해 로그 유실은 없었다.
     - Batch writer는 M-03A async보다 개선됐지만 M-03 sync baseline보다 느렸다.
     - Conclusion: batch write는 단순 async backlog 문제를 완화했지만, 현재 설정(batch size 500, flush interval 100ms)에서는 sync baseline을 넘지 못했다. AccessLog 병목은 DB write/commit 비용뿐 아니라 queue 대기, flush burst, read/write connection 경쟁까지 함께 고려해야 한다.
+
+### 🎯 Mission 03-C. [Batch 튜닝] "Smart AccessLog Batch Writer"
+- **Goal:** M-03B의 batch write 구조를 유지하되, flush burst와 queue contention을 줄여 400 VU p95 latency를 개선한다.
+- **Architecture:** `GET /api/{key}` -> lock-free queue -> bounded backpressure -> size/time triggered batch writer -> `JdbcTemplate.batchUpdate`.
+- **Constraint:**
+    - AccessLog는 DB에 저장되어야 한다.
+    - 큐가 가득 차면 로그를 버리지 않고 요청 스레드가 대기한다.
+    - 메모리 큐 기반이므로 프로세스 장애 시 아직 flush되지 않은 로그는 유실될 수 있다.
+- **Hypothesis:**
+    - M-03B는 batch size 500, flush interval 100ms로 한 번에 큰 write burst가 발생할 수 있다.
+    - 더 작은 batch size와 더 짧은 flush interval을 사용하면 DB write를 더 고르게 분산해 read redirect 요청과 write batch 간 경쟁이 줄어들 것이다.
+    - `ArrayBlockingQueue` 대신 `ConcurrentLinkedQueue + Semaphore`로 queue 경합을 낮추면 요청 스레드의 queue 진입 비용도 줄어들 것이다.
+- **Experiment:**
+    - Baseline: M-03 400 VU sync result.
+    - Previous Variant: M-03B 400 VU batch result.
+    - Smart Batch Variant: `SHORTENER_ACCESS_LOG_MODE=SMART_BATCH`, `TARGET_VUS=400`.
+    - Default smart batch settings: queue capacity 20000, batch size 200, flush interval 50ms.
+- **Acceptance Criteria:**
+    - 테스트 전후 `access_logs` row count 차이가 k6 request count와 일치하거나, drain 대기 후 수렴하는지 확인.
+    - 400 VU 기준 p95 latency가 M-03B batch 결과보다 개선되는지 확인.
+    - 가능하면 M-03 sync baseline 대비 p95도 개선되는지 확인.
+    - App/DB CPU, Memory, PIDs를 함께 기록해 smart batch가 flush burst를 줄였는지 설명.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.

@@ -28,6 +28,18 @@ batch 설정 기본값:
 - `SHORTENER_ACCESS_LOG_BATCH_SIZE=500`
 - `SHORTENER_ACCESS_LOG_BATCH_FLUSH_INTERVAL_MS=100`
 
+Mission 03-C에서 AccessLog를 smart batch writer로 저장하려면 앱을 smart batch 모드로 올린다.
+
+```bash
+SHORTENER_ACCESS_LOG_MODE=SMART_BATCH docker compose -f missions/phase-2/docker-compose.yml up -d --build
+```
+
+smart batch 설정 기본값:
+
+- `SHORTENER_ACCESS_LOG_SMART_BATCH_QUEUE_CAPACITY=20000`
+- `SHORTENER_ACCESS_LOG_SMART_BATCH_SIZE=200`
+- `SHORTENER_ACCESS_LOG_SMART_BATCH_FLUSH_INTERVAL_MS=50`
+
 기본값은 기존 baseline과 같은 `sync`다.
 
 컨테이너 상태 확인:
@@ -100,12 +112,20 @@ BASE_URL=http://<WINDOWS_LAN_IP>:8080/api TARGET_VUS=400 \
   k6 run --summary-export mission-03b-batch-400-summary.json mission-03-real.js
 ```
 
+M03-C smart batch 결과는 별도 파일로 저장한다.
+
+```bash
+BASE_URL=http://<WINDOWS_LAN_IP>:8080/api TARGET_VUS=400 \
+  k6 run --summary-export mission-03c-smart-batch-400-summary.json mission-03-real.js
+```
+
 결과 파일:
 
 ```text
 missions/phase-2/tests/k6/mission-03-summary.json
 missions/phase-2/tests/k6/mission-03-400-summary.json
 missions/phase-2/tests/k6/mission-03b-batch-400-summary.json
+missions/phase-2/tests/k6/mission-03c-smart-batch-400-summary.json
 ```
 
 ## 5. Docker 리소스 수집
