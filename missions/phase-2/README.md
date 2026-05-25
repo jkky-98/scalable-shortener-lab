@@ -42,6 +42,38 @@ smart batch 설정 기본값:
 
 기본값은 기존 baseline과 같은 `sync`다.
 
+Mission 03-D에서 App/DB CPU를 재분배하려면 리소스 환경변수를 함께 지정한다.
+
+PowerShell:
+
+```powershell
+$env:APP_CPUS="1.0"
+$env:DB_CPUS="0.5"
+$env:SHORTENER_ACCESS_LOG_MODE="SMART_BATCH"
+docker compose -f missions/phase-2/docker-compose.yml up -d --build --force-recreate
+```
+
+WSL2 bash:
+
+```bash
+APP_CPUS=1.0 DB_CPUS=0.5 SHORTENER_ACCESS_LOG_MODE=SMART_BATCH \
+  docker compose -f missions/phase-2/docker-compose.yml up -d --build --force-recreate
+```
+
+리소스 제한 적용 확인:
+
+```bash
+docker inspect shortener-app-phase-2 --format '{{.HostConfig.NanoCpus}}'
+docker inspect shortener-db-phase-2 --format '{{.HostConfig.NanoCpus}}'
+```
+
+기대값:
+
+```text
+app 1.0 CPU = 1000000000
+db  0.5 CPU = 500000000
+```
+
 컨테이너 상태 확인:
 
 ```bash

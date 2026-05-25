@@ -9,6 +9,7 @@
 | **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
 | **M-03B** | Batch AccessLog | 400 | 850 |       202        |       685        |      0%       |     -      | Lossless batch, still slower than sync |
 | **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |    14%     | App CPU saturated, slower than batch |
+| **M-03D** | Resource Rebalancing | 400 |  -  |        -         |        -         |       -       |     -      | Pending App 1.0 / DB 0.5 |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -125,6 +126,21 @@
     - Docker stats 기준 App CPU는 테스트 중 48~50% 부근에 계속 머물렀고, App memory는 최대 약 349MiB/512MiB(68%)까지 증가했다. DB CPU는 대부분 6~14% 수준, DB memory는 약 384MiB/1GiB(38%)로 낮았다.
     - M-03C는 M-03B보다 작은 batch size와 짧은 flush interval을 사용했지만, 결과는 M-03B보다 악화됐다.
     - Conclusion: flush burst를 줄이는 방향 자체는 타당한 가설이었지만, 현재 리소스 제한에서는 DB가 아니라 App CPU quota와 queue/write orchestration overhead가 더 큰 병목으로 나타났다. AccessLog write 경로만 계속 미세 조정하기보다, 다음 단계에서는 read 경로의 DB 의존도를 줄이는 cache 계층 또는 read/write 분리를 검증하는 편이 더 유효하다.
+
+### 🎯 Mission 03-D. [리소스 재분배] "App 1.0 CPU / DB 0.5 CPU"
+- **Goal:** M-03C의 smart batch 악화가 구조 자체의 문제인지, App CPU quota 부족 때문인지 확인한다.
+- **Architecture:** Single App + Single MySQL은 유지하되 CPU limit만 `App 0.5 / DB 1.0`에서 `App 1.0 / DB 0.5`로 재분배한다.
+- **Hypothesis:**
+    - M-03C에서 DB CPU는 낮고 App CPU가 0.5 CPU limit에 붙었으므로, App CPU를 늘리면 smart batch의 queue/write orchestration overhead를 더 잘 감당할 수 있다.
+    - DB CPU를 0.5로 줄여도 short URL read와 AccessLog insert가 단순하므로 즉시 병목이 되지 않을 수 있다.
+- **Experiment:**
+    - Resource Variant: `APP_CPUS=1.0`, `DB_CPUS=0.5`.
+    - Writer Variant 1: `SHORTENER_ACCESS_LOG_MODE=sync`, `TARGET_VUS=400`.
+    - Writer Variant 2: `SHORTENER_ACCESS_LOG_MODE=SMART_BATCH`, `TARGET_VUS=400`.
+- **Acceptance Criteria:**
+    - `docker inspect`로 App `NanoCpus=1000000000`, DB `NanoCpus=500000000` 적용 여부를 확인한다.
+    - sync와 smart batch를 같은 리소스 조건에서 비교한다.
+    - p95 latency가 M-03C 또는 M-03 sync baseline보다 개선되는지 확인한다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.

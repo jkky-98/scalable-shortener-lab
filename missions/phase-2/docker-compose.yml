@@ -27,8 +27,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '${APP_CPUS:-0.5}'
+          memory: ${APP_MEMORY:-512M}
     restart: unless-stopped
 
   db:
@@ -50,6 +50,6 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 1G
+          cpus: '${DB_CPUS:-1.0}'
+          memory: ${DB_MEMORY:-1G}
     restart: unless-stopped
