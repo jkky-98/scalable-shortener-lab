@@ -7,7 +7,7 @@
 | **M-03** | Single App | 200 | 729 |       126        |       298        |      0%       |    54%     | Stable baseline |
 | **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
 | **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
-| **M-03B** | Batch AccessLog | 400 |  -  |        -         |        -         |       -       |     -      | Batch write experiment |
+| **M-03B** | Batch AccessLog | 400 | 850 |       202        |       685        |      0%       |     -      | Lossless batch, still slower than sync |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -91,6 +91,11 @@
     - 400 VU 기준 p95 latency가 M-03A async보다 개선되는지 확인.
     - 가능하면 M-03 sync baseline 대비 p95도 개선되는지 확인.
     - App/DB CPU, Memory, PIDs를 함께 기록해 batch write가 DB backlog를 줄였는지 설명.
+- **Result (2026-05-25):**
+    - 400 VU batch: 850 RPS, avg 202ms, p95 685ms, fail 0%.
+    - `access_logs` row count: 106,726 -> 149,248. 증가량 42,522 rows가 k6 request count 42,522와 일치해 로그 유실은 없었다.
+    - Batch writer는 M-03A async보다 개선됐지만 M-03 sync baseline보다 느렸다.
+    - Conclusion: batch write는 단순 async backlog 문제를 완화했지만, 현재 설정(batch size 500, flush interval 100ms)에서는 sync baseline을 넘지 못했다. AccessLog 병목은 DB write/commit 비용뿐 아니라 queue 대기, flush burst, read/write connection 경쟁까지 함께 고려해야 한다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
