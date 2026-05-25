@@ -11,10 +11,12 @@ public class AccessLogProperties {
 
     private Mode mode = Mode.SYNC;
     private Async async = new Async();
+    private Batch batch = new Batch();
 
     public enum Mode {
         SYNC,
-        ASYNC
+        ASYNC,
+        BATCH
     }
 
     @Getter
@@ -23,5 +25,13 @@ public class AccessLogProperties {
         private int corePoolSize = 4;
         private int maxPoolSize = 8;
         private int queueCapacity = 10000;
+    }
+
+    @Getter
+    @Setter
+    public static class Batch {
+        private int queueCapacity = 20000;
+        private int size = 500;
+        private long flushIntervalMs = 100;
     }
 }

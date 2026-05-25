@@ -4,24 +4,20 @@ import com.example.shortener.scalable_shortener.config.AccessLogProperties;
 import com.example.shortener.scalable_shortener.domain.entity.AccessLog;
 import com.example.shortener.scalable_shortener.domain.repository.AccessLogRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class AsyncAccessLogWriter implements AccessLogWriter {
+public class SyncAccessLogWriter implements AccessLogWriter {
 
     private final AccessLogRepository accessLogRepository;
 
     @Override
     public AccessLogProperties.Mode mode() {
-        return AccessLogProperties.Mode.ASYNC;
+        return AccessLogProperties.Mode.SYNC;
     }
 
     @Override
-    @Async("accessLogExecutor")
-    @Transactional
     public void write(AccessLog accessLog) {
         accessLogRepository.save(accessLog);
     }

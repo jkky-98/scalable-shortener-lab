@@ -7,6 +7,7 @@
 | **M-03** | Single App | 200 | 729 |       126        |       298        |      0%       |    54%     | Stable baseline |
 | **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
 | **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
+| **M-03B** | Batch AccessLog | 400 |  -  |        -         |        -         |       -       |     -      | Batch write experiment |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -72,6 +73,24 @@
     - `access_logs` row count 확인: 106,726 rows. async 모드에서도 DB 저장 경로는 동작했다.
     - Docker stats 발췌상 테스트 종료 직후 DB CPU가 82% -> 101%까지 상승했다. 이는 async executor가 로그 write를 제거한 것이 아니라 큐에 적체한 뒤 DB에 밀어 넣는 패턴으로 해석한다.
     - Conclusion: 단순 `@Async` 기반 AccessLog 저장은 현재 리소스 제한 환경에서 sync baseline보다 악화됐다. DB write 자체가 병목 후보이며, 다음 개선은 batch insert, bounded backpressure, 별도 write buffer, Redis Stream/Kafka 같은 완충 계층을 검토해야 한다.
+
+### 🎯 Mission 03-B. [병목 개선] "AccessLog Batch Writer"
+- **Goal:** AccessLog DB 저장 요구사항을 유지하면서 요청당 `INSERT + commit` 구조를 batch write 구조로 변경해 p95 latency를 개선한다.
+- **Architecture:** `GET /api/{key}` -> in-memory queue -> batch writer thread -> `JdbcTemplate.batchUpdate`.
+- **Constraint:**
+    - AccessLog는 DB에 저장되어야 한다.
+    - 큐가 가득 차면 로그를 버리지 않고 요청 스레드가 대기한다.
+    - 메모리 큐 기반이므로 프로세스 장애 시 아직 flush되지 않은 로그는 유실될 수 있다.
+- **Experiment:**
+    - Baseline: M-03 400 VU sync result.
+    - Failed Variant: M-03A 400 VU async result.
+    - Batch Variant: `SHORTENER_ACCESS_LOG_MODE=batch`, `TARGET_VUS=400`.
+    - Default batch settings: queue capacity 20000, batch size 500, flush interval 100ms.
+- **Acceptance Criteria:**
+    - 테스트 전후 `access_logs` row count 차이가 k6 request count와 일치하거나, drain 대기 후 수렴하는지 확인.
+    - 400 VU 기준 p95 latency가 M-03A async보다 개선되는지 확인.
+    - 가능하면 M-03 sync baseline 대비 p95도 개선되는지 확인.
+    - App/DB CPU, Memory, PIDs를 함께 기록해 batch write가 DB backlog를 줄였는지 설명.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
