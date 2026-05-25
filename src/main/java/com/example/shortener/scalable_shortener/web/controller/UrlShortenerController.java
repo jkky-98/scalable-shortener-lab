@@ -2,8 +2,8 @@ package com.example.shortener.scalable_shortener.web.controller;
 
 import com.example.shortener.scalable_shortener.domain.entity.AccessLog;
 import com.example.shortener.scalable_shortener.domain.entity.ShortUrl;
-import com.example.shortener.scalable_shortener.domain.repository.AccessLogRepository;
 import com.example.shortener.scalable_shortener.domain.repository.ShortUrlRepository;
+import com.example.shortener.scalable_shortener.domain.service.AccessLogService;
 import com.example.shortener.scalable_shortener.utils.Base62;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.Map;
 public class UrlShortenerController {
 
     private final ShortUrlRepository shortUrlRepository;
-    private final AccessLogRepository accessLogRepository;
+    private final AccessLogService accessLogService;
     private final Base62 base62;
 
     // [Mission 1] 헬스 체크 & IP 확인
@@ -70,14 +70,14 @@ public class UrlShortenerController {
             return ResponseEntity.notFound().build();
         }
 
-        // 통계 저장 (동기 처리 - 성능 저하 원인)
+        // 통계 저장 (설정에 따라 sync/async 전환)
         AccessLog log = new AccessLog(
                 key,
                 request.getRemoteAddr(),
                 request.getHeader("User-Agent"),
                 request.getHeader("Referer")
         );
-        accessLogRepository.save(log);
+        accessLogService.save(log);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setLocation(URI.create(shortUrl.getOriginalUrl()));

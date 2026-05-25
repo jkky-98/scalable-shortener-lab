@@ -6,6 +6,7 @@
 |:---:|:---|:---:|:---:|:----------------:|:----------------:|:-------------:|:----------:|:------------------|
 | **M-03** | Single App | 200 | 729 |       126        |       298        |      0%       |    54%     | Stable baseline |
 | **M-03** | Single App | 400 | 927 |       184        |       564        |      0%       |    57%     | Latency limit around 900 RPS |
+| **M-03A** | Async AccessLog | 400 |  -  |        -         |        -         |       -       |     -      | Bottleneck decomposition |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -49,6 +50,23 @@
     - 200 VU: 729 RPS, avg 126ms, p95 298ms, fail 0%.
     - 400 VU: 927 RPS, avg 184ms, p95 564ms, fail 0%.
     - Conclusion: Single App + Single MySQL의 지연 시간 기준 한계는 400 VU, 약 900 RPS 부근이다. CPU/Memory가 100%에 닿기 전 p95가 먼저 악화되므로 병목은 CPU 고갈보다 DB 동기 write, DB connection 대기, Tomcat worker 대기 등 queueing으로 추정한다.
+
+### 🎯 Mission 03-A. [병목 분해] "AccessLog 동기 Write 분리"
+- **Goal:** `GET /api/{key}`의 응답 경로에서 `access_logs` DB write가 p95 latency에 미치는 영향을 분리 측정.
+- **Constraint:** AccessLog는 프로젝트 요구사항이므로 제거하지 않는다. 단, 설정으로 `sync`와 `async` write 방식을 전환한다.
+- **Hypothesis:**
+    - 현재 redirect 경로는 `short_urls SELECT` 후 `access_logs INSERT`를 같은 요청 안에서 수행한다.
+    - 400 VU에서 CPU/Memory가 100%에 닿기 전 p95가 악화된 원인은 동기 DB write, DB connection 대기, Tomcat worker 대기 등 queueing일 가능성이 높다.
+    - AccessLog write를 비동기로 분리하면 기능 요구사항은 유지하면서 redirect p95가 감소할 것이다.
+- **Experiment:**
+    - Baseline: `SHORTENER_ACCESS_LOG_MODE=sync`
+    - Variant: `SHORTENER_ACCESS_LOG_MODE=async`
+    - Same Load: `TARGET_VUS=400`
+- **Acceptance Criteria:**
+    - async 모드에서도 `access_logs` row가 DB에 저장되는지 확인.
+    - 테스트 종료 후 executor drain 시간을 둔 뒤 k6 요청 수와 `access_logs` 증가량을 비교.
+    - 400 VU 기준 p95 latency가 Mission 03 baseline 대비 개선되는지 확인.
+    - App/DB CPU, Memory, PIDs를 함께 기록해 병목 위치를 설명.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.

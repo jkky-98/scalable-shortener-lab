@@ -10,6 +10,14 @@ Windows Desktop의 WSL2 터미널에서 실행한다.
 docker compose -f missions/phase-2/docker-compose.yml up -d --build
 ```
 
+Mission 03-A에서 AccessLog를 비동기로 저장하려면 앱을 async 모드로 올린다.
+
+```bash
+SHORTENER_ACCESS_LOG_MODE=async docker compose -f missions/phase-2/docker-compose.yml up -d --build
+```
+
+기본값은 기존 baseline과 같은 `sync`다.
+
 컨테이너 상태 확인:
 
 ```bash
