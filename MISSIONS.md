@@ -9,7 +9,7 @@
 | **M-03A** | Async AccessLog | 400 | 477 |       371        |       1187       |      0%       |    101%    | Async write backlog |
 | **M-03B** | Batch AccessLog | 400 | 850 |       202        |       685        |      0%       |     -      | Lossless batch, still slower than sync |
 | **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |    14%     | App CPU saturated, slower than batch |
-| **M-03D** | Resource Rebalancing | 400 |  -  |        -         |        -         |       -       |     -      | Pending App 1.0 / DB 0.5 |
+| **M-03D** | Smart Batch + Rebalanced CPU | 400 | 3332 |        43        |        91        |      0%       |    51%     | App/DB CPU limits both utilized |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -141,6 +141,12 @@
     - `docker inspect`로 App `NanoCpus=1000000000`, DB `NanoCpus=500000000` 적용 여부를 확인한다.
     - sync와 smart batch를 같은 리소스 조건에서 비교한다.
     - p95 latency가 M-03C 또는 M-03 sync baseline보다 개선되는지 확인한다.
+- **Result (2026-05-25, SMART_BATCH):**
+    - 400 VU smart batch with rebalanced CPU: 3332 RPS, avg 43ms, p95 91ms, fail 0%.
+    - `access_logs` row count: 224,052 -> 390,708. 증가량 166,656 rows가 k6 request count 166,656과 일치해 로그 유실은 없었다.
+    - Docker stats 기준 App CPU는 테스트 중 약 96~101%까지 상승했고, DB CPU도 약 47~51%까지 상승했다. 이는 App 1.0 CPU와 DB 0.5 CPU 제한이 모두 실제로 사용됐음을 보여준다.
+    - App memory는 최대 약 350MiB/512MiB(68%), DB memory는 최대 약 407MiB/1GiB(40%)로 메모리 병목은 아니었다.
+    - Conclusion: M-03C의 smart batch 악화는 구조 자체의 한계라기보다 App 0.5 CPU quota가 너무 낮았던 영향이 컸다. App에 1 CPU를 부여하고 DB를 0.5 CPU로 줄인 조건에서는 smart batch가 기존 sync baseline보다 훨씬 높은 처리량과 낮은 p95를 보였다. 다만 같은 리소스 조건의 sync variant는 아직 비교 대상으로 남아 있다.
 
 ### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
 - **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
