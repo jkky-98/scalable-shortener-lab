@@ -76,7 +76,7 @@ services:
     ports:
       - "${DB_PORT:-3308}:3306"
     volumes:
-      - ../../mysql-data-mission-05:/var/lib/mysql
+      - mysql-data-mission-05:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
       interval: 5s
@@ -89,3 +89,6 @@ services:
           cpus: '${DB_CPUS:-0.5}'
           memory: ${DB_MEMORY:-1G}
     restart: unless-stopped
+
+volumes:
+  mysql-data-mission-05:
