@@ -127,6 +127,11 @@ for i in {1..9}; do curl -s -D - http://localhost/api/hello -o /dev/null | grep 
 ## 테스트 데이터 생성
 
 처음 실행하면 Mission 05 전용 DB volume(`mysql-data-mission-05`)이 비어 있으므로 seed를 다시 만든다.
+Base62 단축키는 대소문자를 모두 사용하므로 `short_urls.short_key`는 case-sensitive collation이어야 한다. 기존 볼륨에서 `Duplicate entry 'Fz'` 같은 seed 실패가 나면 아래 보정 SQL을 한 번 실행한 뒤 seed를 다시 수행한다.
+
+```bash
+docker exec shortener-db-mission-05 mysql -uroot -proot shortener -e "alter table short_urls modify short_key varchar(10) character set utf8mb4 collate utf8mb4_bin;"
+```
 
 ```bash
 cd missions/missions-05/tests/k6

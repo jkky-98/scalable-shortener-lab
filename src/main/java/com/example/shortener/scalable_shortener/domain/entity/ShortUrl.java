@@ -18,7 +18,7 @@ public class ShortUrl {
     @Column(nullable = false, length = 2000)
     private String originalUrl;
 
-    @Column(unique = true, length = 10)
+    @Column(unique = true, columnDefinition = "varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin")
     private String shortKey;
 
     public ShortUrl(String originalUrl) {

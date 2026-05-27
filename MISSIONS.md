@@ -199,6 +199,8 @@
     - 총 App CPU: 증가시키는 경우와 M-04와 비슷하게 고정하는 경우를 분리한다.
     - Nginx CPU: App 3개 앞에서 Nginx가 새 병목이 되는지 확인한다.
     - DB CPU: App 처리 능력 증가 후 병목이 DB write로 이동하는지 확인한다.
+- **Prerequisite:**
+    - Base62 단축키는 대소문자를 모두 사용하므로 `short_urls.short_key`는 case-sensitive collation이어야 한다. MySQL 기본 collation이 case-insensitive이면 `FZ`와 `Fz`를 같은 값으로 판단해 unique index 충돌이 발생한다.
 - **Mission 05-A. App 총 CPU 증가:**
     - `NGINX_CPUS=0.5`, `APP_CPUS=1.0`, `DB_CPUS=0.5`.
     - App 3개 각각 1 CPU를 부여해 총 App CPU를 늘린다.
