@@ -13,7 +13,10 @@
 | **M-03D** | Sync + Rebalanced CPU | 400 | 794 |       218        |       661        |      0%       |    53%     | DB write wait dominates |
 | **M-04** | App Direct + SMART_BATCH | 400 | 3460 |        41        |        92        |      0%       |     -      | M04 direct baseline |
 | **M-04** | Nginx 경유 + SMART_BATCH | 400 | 3266 |        45        |       105        |      0%       |    48%     | 5.6% RPS drop, accepted |
-| **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
+| **M-05A** | App x3 Total CPU Increase | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
+| **M-05B** | App x3 Fixed Total App CPU | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
+| **M-05C** | Nginx CPU Sensitivity | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
+| **M-05D** | DB CPU Sensitivity | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
 ---
@@ -187,13 +190,35 @@
 
 ## Phase 3. 스케일 아웃과 리소스 관리 (Scale-Out)
 
-### 🎯 Mission 05. [수평 확장] "3중 분신술 (Scale-Out)의 효과 검증"
-- **Goal:** App 인스턴스를 3배로 늘렸을 때 처리량도 선형적으로 증가하는가?
-- **Architecture:** `Nginx` -> `App 1, 2, 3` (Round Robin) -> `MySQL`
-- **Key Variable:** DB가 병목이라면 App을 늘려도 RPS는 오르지 않음.
+### 🎯 Mission 05. [수평 확장] "App 3개 확장이 실제 처리량을 올리는가"
+- **Goal:** M-04의 Nginx 진입점 구조를 유지하면서 App 인스턴스를 3개로 늘렸을 때, 처리량 증가 원인이 수평 확장인지 리소스 총량 증가인지 분리해서 확인한다.
+- **Architecture:** `Client` -> `Nginx(80)` -> `App 1, 2, 3` -> `MySQL`
+- **Baseline:** M-04 Nginx 경유 결과: 3266 RPS, avg 45ms, p95 105ms, fail 0%.
+- **Key Variables:**
+    - App 인스턴스 수: 1 -> 3.
+    - 총 App CPU: 증가시키는 경우와 M-04와 비슷하게 고정하는 경우를 분리한다.
+    - Nginx CPU: App 3개 앞에서 Nginx가 새 병목이 되는지 확인한다.
+    - DB CPU: App 처리 능력 증가 후 병목이 DB write로 이동하는지 확인한다.
+- **Mission 05-A. App 총 CPU 증가:**
+    - `NGINX_CPUS=0.5`, `APP_CPUS=1.0`, `DB_CPUS=0.5`.
+    - App 3개 각각 1 CPU를 부여해 총 App CPU를 늘린다.
+    - M-04 대비 RPS가 의미 있게 증가하는지 확인한다.
+- **Mission 05-B. App 총 CPU 고정:**
+    - `NGINX_CPUS=0.5`, `APP_CPUS=0.33`, `DB_CPUS=0.5`.
+    - 총 App CPU를 M-04와 비슷하게 유지하고 인스턴스 수만 늘린다.
+    - 성능이 좋아지지 않으면 M05-A의 향상은 수평 확장 자체보다 CPU 총량 증가 영향이 크다고 해석한다.
+- **Mission 05-C. Nginx CPU 병목 확인:**
+    - `NGINX_CPUS=0.25`와 `NGINX_CPUS=0.5`를 비교한다.
+    - App 3개 앞에서 Nginx가 먼저 CPU limit에 닿는지 확인한다.
+- **Mission 05-D. DB CPU 병목 확인:**
+    - `DB_CPUS=0.5`와 `DB_CPUS=1.0`을 비교한다.
+    - App 확장 이후 병목이 DB로 이동하는지 확인한다.
 - **Acceptance Criteria:**
-    - RPS가 1.5배 이상 증가했는가? (3배 미만일 경우 DB 병목 증명).
-    - App 1, 2, 3 로그에서 요청 분산 확인.
+    - M05-A RPS가 M-04 Nginx 경유 결과 대비 의미 있게 증가하는지 확인한다.
+    - M05-B로 총 App CPU 고정 조건에서도 수평 확장의 이득이 있는지 확인한다.
+    - Docker stats로 Nginx, App 1/2/3, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
+    - Nginx 응답 헤더 `X-Upstream-Addr` 또는 컨테이너 stats로 요청 분산을 확인한다.
+    - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
 
 ### 🎯 Mission 06. [장애 시뮬레이션] "리소스 제한과 좀비 서버"
 - **Goal:** 서버 장애 발생 시 Nginx의 Failover 및 무중단 서비스 검증.
