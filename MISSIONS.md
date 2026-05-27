@@ -11,7 +11,8 @@
 | **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |    14%     | App CPU saturated, slower than batch |
 | **M-03D** | Smart Batch + Rebalanced CPU | 400 | 3332 |        43        |        91        |      0%       |    51%     | App/DB CPU limits both utilized |
 | **M-03D** | Sync + Rebalanced CPU | 400 | 794 |       218        |       661        |      0%       |    53%     | DB write wait dominates |
-| **M-04** | Nginx 진입점 | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
+| **M-04** | App Direct + SMART_BATCH | 400 | 3460 |        41        |        92        |      0%       |     -      | M04 direct baseline |
+| **M-04** | Nginx 경유 + SMART_BATCH | 400 | 3266 |        45        |       105        |      0%       |    48%     | 5.6% RPS drop, accepted |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -173,6 +174,14 @@
     - Nginx 경유 p95 latency가 M-03D 기준선인 91ms에서 크게 악화되는지 확인한다.
     - Docker stats로 Nginx, App, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
     - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
+- **Result (2026-05-27):**
+    - App 직접 접근 400 VU: 3460 RPS, avg 41ms, p95 92ms, fail 0%.
+    - Nginx 경유 400 VU: 3266 RPS, avg 45ms, p95 105ms, fail 0%.
+    - Nginx 경유 시 App 직접 접근 대비 RPS 감소폭은 약 5.6%로 acceptance 기준인 10% 이내였다.
+    - AccessLog row count는 510,552 rows였다. Mission 04에서 수동 302 확인 2건, App 직접 접근 173,128건, 첫 Nginx 경유 측정 174,036건, stats와 맞춘 Nginx 재측정 163,386건을 합산한 값과 일치해 로그 유실은 없었다.
+    - Docker stats 기준 Nginx 경유 재측정 중 App CPU는 최대 약 89%, DB CPU는 최대 약 48%, Nginx CPU는 최대 약 26%까지 상승했다. Nginx는 0.25 CPU 제한에 근접했지만, 처리량 감소폭과 p95 증가는 허용 범위였다.
+    - App memory는 최대 약 421MiB/512MiB(82%), DB memory는 약 430MiB/1GiB(42%), Nginx memory는 약 10MiB/128MiB(8%) 수준이었다.
+    - Conclusion: 400 VU 조건에서 Nginx를 외부 요청 진입점으로 추가해도 M-03D 최적 구조는 유지된다. Nginx 경유 비용은 관측됐지만 새 병목으로 보기는 어렵다. 다만 Nginx CPU가 0.25 CPU 제한에 가까워졌으므로, 다음 Mission 05에서 여러 App으로 확장할 때는 Nginx CPU도 함께 조정해야 한다.
 
 ---
 
