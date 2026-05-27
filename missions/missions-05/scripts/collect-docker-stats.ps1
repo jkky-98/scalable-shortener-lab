@@ -5,11 +5,11 @@ param(
 )
 
 $containers = @(
-    if ([string]::IsNullOrWhiteSpace($env:NGINX_CONTAINER)) { "shortener-nginx-mission-05" } else { $env:NGINX_CONTAINER }
-    if ([string]::IsNullOrWhiteSpace($env:APP1_CONTAINER)) { "shortener-app1-mission-05" } else { $env:APP1_CONTAINER }
-    if ([string]::IsNullOrWhiteSpace($env:APP2_CONTAINER)) { "shortener-app2-mission-05" } else { $env:APP2_CONTAINER }
-    if ([string]::IsNullOrWhiteSpace($env:APP3_CONTAINER)) { "shortener-app3-mission-05" } else { $env:APP3_CONTAINER }
-    if ([string]::IsNullOrWhiteSpace($env:DB_CONTAINER)) { "shortener-db-mission-05" } else { $env:DB_CONTAINER }
+    "shortener-nginx-mission-05"
+    "shortener-app1-mission-05"
+    "shortener-app2-mission-05"
+    "shortener-app3-mission-05"
+    "shortener-db-mission-05"
 )
 
 $outputDirectory = Split-Path -Parent $OutputFile
