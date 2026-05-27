@@ -157,6 +157,14 @@ mission-05d-db-1cpu-400-summary.json
 
 ## Docker stats 수집
 
+PowerShell:
+
+```powershell
+.\missions\missions-05\scripts\collect-docker-stats.ps1 120 1 missions/missions-05/results/mission-05a-docker-stats.csv
+```
+
+Bash:
+
 ```bash
 ./missions/missions-05/scripts/collect-docker-stats.sh 120 1 missions/missions-05/results/mission-05a-docker-stats.csv
 ```
