@@ -10,6 +10,11 @@ CONTAINERS=(
   "${DB_CONTAINER:-shortener-db-phase-2}"
 )
 
+if [ -n "${EXTRA_CONTAINERS:-}" ]; then
+  read -r -a EXTRA_CONTAINER_NAMES <<< "$EXTRA_CONTAINERS"
+  CONTAINERS+=("${EXTRA_CONTAINER_NAMES[@]}")
+fi
+
 mkdir -p "$(dirname "$OUTPUT_FILE")"
 
 echo "timestamp,container,cpu_percent,mem_usage,mem_percent,net_io,block_io,pids" > "$OUTPUT_FILE"

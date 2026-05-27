@@ -11,6 +11,7 @@
 | **M-03C** | Smart Batch AccessLog | 400 | 737 |       235        |       793        |      0%       |    14%     | App CPU saturated, slower than batch |
 | **M-03D** | Smart Batch + Rebalanced CPU | 400 | 3332 |        43        |        91        |      0%       |    51%     | App/DB CPU limits both utilized |
 | **M-03D** | Sync + Rebalanced CPU | 400 | 794 |       218        |       661        |      0%       |    53%     | DB write wait dominates |
+| **M-04** | Nginx 진입점 | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
 | **M-05** | 3 Apps + LB | 150 |  -  |        -         |        -         |       -       |     -      | -                 |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
@@ -153,11 +154,25 @@
     - Docker stats 기준 초반에는 App CPU가 약 99~101%까지 상승했지만, 중후반에는 DB CPU가 약 49~53%로 DB 0.5 CPU 제한에 붙으면서 App CPU가 약 45~55% 수준까지 내려갔다.
     - Conclusion: 리소스 재분배 조건에서는 sync보다 smart batch가 압도적으로 우수했다. sync는 요청 스레드가 매 요청마다 AccessLog DB insert 완료를 기다리기 때문에 DB 0.5 CPU 제한에서 p95가 661ms까지 악화됐다. 반면 smart batch는 요청 경로에서 write wait를 제거하고 batch writer가 DB CPU를 효율적으로 사용해 3332 RPS, p95 91ms를 달성했다. M-03D 기준 최적 구조는 `App 1.0 CPU / DB 0.5 CPU + SMART_BATCH`다.
 
-### 🎯 Mission 04. [인프라 확장] "Nginx 로드밸런싱과 오버헤드"
-- **Goal:** 리버스 프록시(Nginx) 도입 시 발생하는 네트워크 오버헤드 측정.
-- **Architecture:** `Client` -> `Nginx(80)` -> `App(8080)` -> `DB`
-- **Hypothesis:** Nginx를 거치면 Hop이 추가되어 Latency가 미세하게 증가할 것이다.
-- **Acceptance Criteria:** Mission 3 결과 대비 RPS 감소폭이 10% 이내여야 함 (설정 오류 검증).
+### 🎯 Mission 04. [진입점 검증] "Nginx를 앞단에 두어도 최적 구조가 유지되는가"
+- **Goal:** M-03D에서 찾은 최적 단일 백엔드 구조(`App 1.0 CPU / DB 0.5 CPU + SMART_BATCH`) 앞에 Nginx를 추가했을 때, Nginx가 새 병목이 되는지 확인한다.
+- **Architecture:**
+    - App 직접 접근: `Client` -> `App(8080)` -> `DB`
+    - Nginx 경유: `Client` -> `Nginx(80)` -> `App(8080)` -> `DB`
+- **Hypothesis:**
+    - Nginx keepalive 설정이 충분하면 단순 프록시 경유 비용은 제한적일 것이다.
+    - Nginx CPU limit이 너무 작으면 App/DB보다 Nginx가 먼저 병목이 될 수 있다.
+    - Mission 04의 핵심은 Nginx 자체의 미세한 latency 증가가 아니라, 외부 요청 진입점을 Nginx로 바꿔도 M-03D 최적 구조가 유지되는지 검증하는 것이다.
+- **Experiment:**
+    - Resource Variant: `NGINX_CPUS=0.25`, `APP_CPUS=1.0`, `DB_CPUS=0.5`.
+    - Writer Variant: `SHORTENER_ACCESS_LOG_MODE=SMART_BATCH`.
+    - App 직접 접근 기준선: `BASE_URL=http://<WINDOWS_LAN_IP>:8080/api`, `TARGET_VUS=400`.
+    - Nginx 경유 실험: `BASE_URL=http://<WINDOWS_LAN_IP>/api`, `TARGET_VUS=400`.
+- **Acceptance Criteria:**
+    - Nginx 경유 RPS 감소폭이 App 직접 접근 대비 10% 이내인지 확인한다.
+    - Nginx 경유 p95 latency가 M-03D 기준선인 91ms에서 크게 악화되는지 확인한다.
+    - Docker stats로 Nginx, App, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
+    - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
 
 ---
 
