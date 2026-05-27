@@ -22,10 +22,10 @@ M03-D SMART_BATCH + App 1.0 / DB 0.5
 
 ## 서버 실행
 
-Windows Desktop에서 기존 phase-2 컨테이너가 8080을 사용 중이면 먼저 내린다.
+Windows Desktop에서 포트 `80`, `8080`, `3307`을 이미 사용 중인 컨테이너가 있으면 먼저 내린다.
 
 ```bash
-docker compose -f missions/phase-2/docker-compose.yml down
+docker ps --format "table {{.Names}}\t{{.Ports}}"
 ```
 
 Windows Desktop의 WSL2 터미널:
@@ -74,7 +74,7 @@ curl http://<WINDOWS_LAN_IP>:8080/api/hello
 처음 실행하면 Mission 04 전용 DB volume(`mysql-data-mission-04`)이 비어 있으므로 seed를 다시 만든다.
 
 ```bash
-cd missions/phase-2/tests/k6
+cd missions/missions-04/tests/k6
 BASE_URL=http://<WINDOWS_LAN_IP>/api python3 seed-and-save.py
 ```
 
@@ -83,16 +83,16 @@ BASE_URL=http://<WINDOWS_LAN_IP>/api python3 seed-and-save.py
 Nginx 경유:
 
 ```bash
-cd missions/phase-2/tests/k6
+cd missions/missions-04/tests/k6
 BASE_URL=http://<WINDOWS_LAN_IP>/api TARGET_VUS=400 \
-  k6 run --summary-export mission-04-nginx-smart-batch-400-summary.json mission-03-real.js
+  k6 run --summary-export mission-04-nginx-smart-batch-400-summary.json mission-04.js
 ```
 
 App 직접 접근:
 
 ```bash
 BASE_URL=http://<WINDOWS_LAN_IP>:8080/api TARGET_VUS=400 \
-  k6 run --summary-export mission-04-direct-smart-batch-400-summary.json mission-03-real.js
+  k6 run --summary-export mission-04-direct-smart-batch-400-summary.json mission-04.js
 ```
 
 ## Docker stats 수집
@@ -100,10 +100,7 @@ BASE_URL=http://<WINDOWS_LAN_IP>:8080/api TARGET_VUS=400 \
 Nginx, App, DB를 함께 수집한다.
 
 ```bash
-APP_CONTAINER=shortener-app-mission-04 \
-DB_CONTAINER=shortener-db-mission-04 \
-EXTRA_CONTAINERS=shortener-nginx-mission-04 \
-./missions/phase-2/scripts/collect-docker-stats.sh 120 1 missions/phase-2/results/mission-04-docker-stats.csv
+./missions/missions-04/scripts/collect-docker-stats.sh 120 1 missions/missions-04/results/mission-04-docker-stats.csv
 ```
 
 ## 판정 기준
