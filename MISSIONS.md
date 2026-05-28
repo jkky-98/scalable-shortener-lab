@@ -258,12 +258,30 @@
 
 ## Phase 4. 성능 최적화 (Caching Strategy)
 
-### 🎯 Mission 07. [캐시 적용] "Redis 도입과 Read 성능 폭발"
-- **Goal:** DB 부하를 제거하고 네트워크 대역폭(100Mbps) 한계까지 성능 끌어올리기.
-- **Architecture:** Look Aside (`App` -> `Redis` -> `DB`)
+### 🎯 Mission 07. [캐시 적용] "Redis가 Read 병목을 제거하는가"
+- **Goal:** M-05에서 확인한 scale-out 한계를 바탕으로, `GET /api/{key}`의 `short_urls` read 경로를 Redis cache로 옮겼을 때 병목이 어떻게 이동하는지 확인한다.
+- **Baseline:** M-05D 결과: `Nginx 0.5 / App 1.0 x3 / DB 1.0 / SMART_BATCH`, 4326 RPS, avg 31ms, p95 61ms, fail 0%.
+- **Architecture:** `Client` -> `Nginx` -> `App 1, 2, 3` -> `Redis` -> `MySQL`
+- **Constraint:**
+    - AccessLog DB write는 기존 요구사항이므로 유지한다.
+    - Cache hit/miss를 측정할 수 있어야 한다.
+    - Cache miss 시에는 MySQL에서 원본 URL을 읽고 Redis에 저장한다.
+- **Mission 07-A. Redis Read-through Cache 도입:**
+    - `GET /api/{key}`에서 `short_urls` 조회를 Redis 우선 조회로 변경한다.
+    - Cache hit이면 Redis 값으로 즉시 redirect하고, cache miss이면 MySQL 조회 후 Redis에 저장한다.
+    - AccessLog 저장 방식은 `SMART_BATCH`를 유지한다.
+- **Mission 07-B. Redis CPU 병목 확인:**
+    - `REDIS_CPUS=0.25`와 `REDIS_CPUS=0.5`를 비교한다.
+    - App 3개 앞단 병목이 Redis로 이동하는지 확인한다.
+- **Mission 07-C. Cache 이후 DB CPU 민감도 확인:**
+    - `DB_CPUS=0.5`와 `DB_CPUS=1.0`을 비교한다.
+    - Redis hit 비율이 높을 때 DB 병목이 사라지는지, 또는 AccessLog batch write가 여전히 DB 병목인지 확인한다.
 - **Acceptance Criteria:**
-    - Mission 3 대비 **RPS 5배 이상** 증가.
-    - 부하 테스트 중 MySQL CPU 사용률 **5% 미만** 유지.
+    - M-05D 대비 RPS 또는 p95가 의미 있게 개선되는지 확인한다.
+    - Redis cache hit ratio를 기록한다.
+    - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
+    - Docker stats로 Nginx, App 1/2/3, Redis, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
+    - Cache hit 조건에서도 fail rate 0%를 유지한다.
 
 ### 🎯 Mission 08. [캐시 관리] "TTL 설정과 정합성 테스트"
 - **Goal:** 캐시 만료(TTL) 시 발생하는 DB 스파이크(Cache Stampede) 관측.
