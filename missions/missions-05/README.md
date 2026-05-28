@@ -160,14 +160,16 @@ mission-05d-db-1cpu-400-summary.json
 PowerShell:
 
 ```powershell
-.\missions\missions-05\scripts\collect-docker-stats.ps1 120 1 missions/missions-05/results/mission-05a-docker-stats.csv
+powershell -ExecutionPolicy Bypass -File .\missions\missions-05\scripts\collect-docker-stats.ps1 120 3 missions/missions-05/results/mission-05a-docker-stats.csv
 ```
 
 Bash:
 
 ```bash
-./missions/missions-05/scripts/collect-docker-stats.sh 120 1 missions/missions-05/results/mission-05a-docker-stats.csv
+./missions/missions-05/scripts/collect-docker-stats.sh 120 3 missions/missions-05/results/mission-05a-docker-stats.csv
 ```
+
+기본 수집 간격은 3초다. 원본 CSV와 함께 `.summary.txt` 파일이 생성되며, 대화에는 summary 내용만 공유하면 된다.
 
 ## 판정 기준
 
