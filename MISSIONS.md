@@ -16,7 +16,7 @@
 | **M-05A** | App x3 Total CPU Increase | 400 | 3667 |        38        |        83        |      0%       |    51%     | DB CPU limit after scale-out |
 | **M-05B** | App x3 Fixed Total App CPU | 400 | 827 |       209        |       1100       |      0%       |    20%     | App CPU quota dominates |
 | **M-05C** | Nginx CPU Sensitivity | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
-| **M-05D** | DB CPU Sensitivity | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
+| **M-05D** | DB CPU Sensitivity | 400 | 4326 |        31        |        61        |      0%       |    63%     | DB CPU increase improved throughput |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
 
 ---
@@ -233,6 +233,12 @@
     - `access_logs` 증가량 41,337 rows가 k6 request count 41,337과 일치했다.
     - Docker stats 기준 Nginx는 약 9~11%, DB는 약 18~20%였고, App 3개가 각각 약 32~35%에 붙었다.
     - Conclusion: 총 App CPU를 M-04와 비슷하게 고정하면 App 3개 분산만으로는 성능 이득이 없었다. M05-A의 개선은 수평 확장 자체보다 총 App CPU 증가 효과가 지배적이었다.
+- **Result (M05-D, 2026-05-28):**
+    - 400 VU, `NGINX_CPUS=0.5`, `APP_CPUS=1.0 x3`, `DB_CPUS=1.0`, `SMART_BATCH`.
+    - 4326.3 RPS, avg 31.0ms, p95 61.1ms, fail 0%.
+    - `access_logs` 증가량 216,359 rows가 k6 request count 216,359와 일치했다.
+    - Docker stats summary 기준 Nginx max 35.18%, App max 83.47~100.9%, DB max 63.21%, memory max는 모두 제한 내에 있었다.
+    - Conclusion: DB CPU를 0.5에서 1.0으로 늘리자 M05-A 대비 RPS는 약 18.0% 증가하고 p95는 83.2ms에서 61.1ms로 개선됐다. M05-A의 DB CPU 병목 가설은 타당했다.
 
 ### 🎯 Mission 06. [장애 시뮬레이션] "리소스 제한과 좀비 서버"
 - **Goal:** 서버 장애 발생 시 Nginx의 Failover 및 무중단 서비스 검증.
