@@ -1,18 +1,28 @@
 # 🧪 Scalable URL Shortener Lab: Infrastructure Engineering Log
 
-> **"From Zero to High-Availability"**
+> **"A local performance lab for learning how bottlenecks move."**
 >
-> 단일 서버에서 대용량 트래픽을 처리하는 분산 시스템으로 진화하는 과정을 기록한 인프라 엔지니어링 실습 로그입니다.
-> 단순 기능 구현이 아닌 **리소스 제약 환경에서의 병목 해결(Bottleneck Optimization)**과 **아키텍처 설계**에 집중합니다.
+> 단순한 URL shortener를 대상으로 부하 테스트를 반복하며, 아키텍처 변경에 따라 병목이 어떻게 이동하는지 기록하는 백엔드 성능 실험 프로젝트입니다.
+> 목표는 운영 성능을 보증하는 것이 아니라, 같은 로컬 환경 안에서 **상대 성능**, **p95 latency**, **CPU quota**, **DB write/read 병목**, **scale-out의 한계**를 수치로 관찰하는 것입니다.
+
+## ⚠️ What This Lab Is, and Is Not
+
+이 프로젝트는 집/개인 장비에서 수행하는 로컬 실험실입니다. 따라서 결과 수치를 그대로 운영 환경의 처리량 보증으로 해석하면 안 됩니다.
+
+- **This is a learning lab:** 같은 네트워크, 같은 장비, 같은 부하 시나리오에서 구조를 하나씩 바꾸며 상대 비교를 합니다.
+- **This is not a production benchmark:** Docker Desktop, WSL2, 공유기, Wi-Fi, 단일 MySQL, 작은 데이터셋의 영향을 받습니다.
+- **The important output is diagnosis:** "몇 RPS가 나왔다"보다 "왜 p95가 악화됐는가", "어느 컨테이너가 CPU limit에 닿았는가", "로그 유실이 있었는가"를 더 중요하게 봅니다.
+- **Claims are scoped:** 이 레포의 결과는 "이 로컬 제한 환경에서 관찰된 병목 이동"을 설명합니다. 클라우드, Kubernetes, bare metal 운영 성능은 별도 검증이 필요합니다.
 
 ## 🎯 Project Goal
-- **Architecture First:** 코드는 단순하게, 인프라는 견고하게.
-- **Resource Constraints:** 고사양 장비를 의도적으로 제한하여 극한의 상황을 시뮬레이션.
-- **Data Driven:** 감이 아닌 수치(RPS, Latency, CPU %)로 성능을 증명.
+- **Bottleneck First:** 기능보다 요청 경로의 병목을 찾고 설명하는 데 집중합니다.
+- **Resource Constraints:** Docker CPU/Memory limit으로 작은 서버 환경을 만들고, 제한이 성능에 미치는 영향을 관찰합니다.
+- **Data Driven:** 감이 아니라 RPS, avg/p95 latency, CPU %, fail rate, row count로 판단합니다.
+- **Honest Results:** 성공한 실험뿐 아니라 느려진 실험도 기록합니다. 실패한 실험이 병목 이해에 더 큰 단서를 줄 때가 많습니다.
 
 ## 💻 Lab Environment (Constraints)
 
-실제 프로덕션 환경과 유사한 병목을 유도하기 위해 하드웨어 및 네트워크에 엄격한 제약을 설정했습니다.
+반복 가능한 상대 비교를 위해 하드웨어 및 네트워크 조건을 고정하고, Docker resource limit으로 실험별 리소스를 조정합니다.
 
 ### 1. Host Server (Windows Desktop)
 - **CPU:** AMD Ryzen 7 9800X3D (8C/16T)
@@ -31,7 +41,7 @@
 ### 3. Network Bottleneck
 - **Bandwidth Limit:** **100Mbps** (Home Network Environment)
 - **Theoretical Max RPS:** API 응답이 500Byte일 경우, 물리적 한계는 약 **25,000 RPS**.
-- **Challenge:** 네트워크 대역폭이 포화되기 전에 DB나 애플리케이션의 병목을 먼저 찾아내고 튜닝해야 함.
+- **Interpretation:** 네트워크, Docker Desktop, OS scheduling의 영향을 받을 수 있으므로 절대 수치보다 실험 간 변화량을 더 신뢰합니다.
 
 ---
 
@@ -56,10 +66,10 @@
 | **P1** | **[Mission 01](./MISSIONS.md#mission-01-통신-개통-방화벽을-뚫고-hello-world)** : Hello World on Docker | ⬜ | Connectivity Check |
 | **P1** | **[Mission 02](./MISSIONS.md#mission-02-기능-구현-docker-compose로-app--db-연동)** : App + DB Setup | ⬜ | Functional Test |
 | **P2** | **[Mission 03](./MISSIONS.md#mission-03-부하-측정-single-instance의-한계점-찾기)** : Baseline Stress Test | ⬜ | Max RPS (Single) |
-| **P2** | **[Mission 04](./MISSIONS.md#mission-04-인프라-확장-nginx-로드밸런싱과-오버헤드)** : Nginx Load Balancing | ⬜ | Latency Overhead |
-| **P3** | **[Mission 05](./MISSIONS.md#mission-05-수평-확장-3중-분신술-scale-out의-효과-검증)** : Scale-Out (x3) | ⬜ | Throughput x3? |
-| **P3** | **[Mission 06](./MISSIONS.md#mission-06-장애-시뮬레이션-리소스-제한과-좀비-서버)** : Fault Tolerance | ⬜ | 0% Downtime |
-| **P4** | **[Mission 07](./MISSIONS.md#mission-07-캐시-적용-redis-도입과-read-성능-폭발)** : Redis Caching | ⬜ | DB CPU < 5% |
+| **P2** | **[Mission 04](./MISSIONS.md#mission-04-진입점-검증-nginx를-앞단에-두어도-최적-구조가-유지되는가)** : Nginx Entrypoint | ⬜ | Proxy Overhead |
+| **P3** | **[Mission 05](./MISSIONS.md#mission-05-수평-확장-app-3개-확장이-실제-처리량을-올리는가)** : Scale-Out (x3) | ⬜ | Resource Sensitivity |
+| **P4** | **[Mission 06](./MISSIONS.md#mission-06-캐시-적용-redis가-read-병목을-제거하는가)** : Redis Caching | ⬜ | Cache Hit Ratio |
+| **P4** | **[Mission 07](./MISSIONS.md#mission-07-장애-시뮬레이션-redis-포함-구조에서-일부-app-장애를-견디는가)** : Fault Tolerance | ⬜ | Failover Behavior |
 | **P4** | **[Mission 08](./MISSIONS.md#mission-08-캐시-관리-ttl-설정과-정합성-테스트)** : Cache Stampede | ⬜ | Latency Spike |
 | **P5** | **[Mission 09](./MISSIONS.md#mission-09-db-이중화-replication과-readwrite-splitting)** : DB Replication | ⬜ | Write/Read Split |
 | **P5** | **[Mission 10](./MISSIONS.md#mission-10-최종-리포트-10만-건-처리-데이터-시각화)** : Final Dashboard | ⬜ | **Final Max RPS** |
@@ -72,9 +82,10 @@
 scalable-shortener-lab/
 ├── src/                     # Spring Boot Application (Shared Code)
 ├── missions/                # Infrastructure as Code (Mission-specific)
-│   ├── mission-01/          # Docker Basic
-│   ├── mission-04/          # Nginx Settings
+│   ├── phase-1/             # Mission 01-02 baseline compose
+│   ├── phase-2/             # Mission 03 load-test assets
+│   ├── missions-04/         # Nginx entrypoint experiment
+│   ├── missions-05/         # App scale-out experiment
 │   └── ...
-├── tests/                   # k6 Load Test Scripts
 ├── Dockerfile               # Base Image Builder
 └── MISSIONS.md              # Detailed Mission Guide
