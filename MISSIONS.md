@@ -13,8 +13,8 @@
 | **M-03D** | Sync + Rebalanced CPU | 400 | 794 |       218        |       661        |      0%       |    53%     | DB write wait dominates |
 | **M-04** | App Direct + SMART_BATCH | 400 | 3460 |        41        |        92        |      0%       |     -      | M04 direct baseline |
 | **M-04** | Nginx 경유 + SMART_BATCH | 400 | 3266 |        45        |       105        |      0%       |    48%     | 5.6% RPS drop, accepted |
-| **M-05A** | App x3 Total CPU Increase | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
-| **M-05B** | App x3 Fixed Total App CPU | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
+| **M-05A** | App x3 Total CPU Increase | 400 | 3667 |        38        |        83        |      0%       |    51%     | DB CPU limit after scale-out |
+| **M-05B** | App x3 Fixed Total App CPU | 400 | 827 |       209        |       1100       |      0%       |    20%     | App CPU quota dominates |
 | **M-05C** | Nginx CPU Sensitivity | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
 | **M-05D** | DB CPU Sensitivity | 400 |  -  |        -         |        -         |       -       |     -      | Pending |
 | **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
@@ -221,6 +221,18 @@
     - Docker stats로 Nginx, App 1/2/3, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
     - Nginx 응답 헤더 `X-Upstream-Addr` 또는 컨테이너 stats로 요청 분산을 확인한다.
     - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
+- **Result (M05-A, 2026-05-27):**
+    - 400 VU, `NGINX_CPUS=0.5`, `APP_CPUS=1.0 x3`, `DB_CPUS=0.5`, `SMART_BATCH`.
+    - 3666.7 RPS, avg 38.5ms, p95 83.2ms, fail 0%.
+    - `access_logs` 증가량 183,405 rows가 k6 request count 183,405와 일치했다.
+    - Docker stats 기준 Nginx는 약 28~36%, App 3개는 초반 70~80% 피크 후 분산, DB는 약 49~51%로 DB 0.5 CPU limit에 붙었다.
+    - Conclusion: App 3개 확장은 M-04 Nginx 경유 기준 3266 RPS 대비 약 12.3% 향상됐다. 단, App 처리 능력이 늘면서 다음 병목은 DB 0.5 CPU로 이동했다.
+- **Result (M05-B, 2026-05-28):**
+    - 400 VU, `NGINX_CPUS=0.5`, `APP_CPUS=0.33 x3`, `DB_CPUS=0.5`, `SMART_BATCH`.
+    - 826.6 RPS, avg 209.3ms, p95 1.1s, fail 0%. 성능 threshold `p95<500ms`는 실패했다.
+    - `access_logs` 증가량 41,337 rows가 k6 request count 41,337과 일치했다.
+    - Docker stats 기준 Nginx는 약 9~11%, DB는 약 18~20%였고, App 3개가 각각 약 32~35%에 붙었다.
+    - Conclusion: 총 App CPU를 M-04와 비슷하게 고정하면 App 3개 분산만으로는 성능 이득이 없었다. M05-A의 개선은 수평 확장 자체보다 총 App CPU 증가 효과가 지배적이었다.
 
 ### 🎯 Mission 06. [장애 시뮬레이션] "리소스 제한과 좀비 서버"
 - **Goal:** 서버 장애 발생 시 Nginx의 Failover 및 무중단 서비스 검증.
