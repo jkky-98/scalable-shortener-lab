@@ -246,19 +246,11 @@
     - Docker stats summary 기준 Nginx max 35.18%, App max 83.47~100.9%, DB max 63.21%, memory max는 모두 제한 내에 있었다.
     - Conclusion: DB CPU를 0.5에서 1.0으로 늘리자 M05-A 대비 RPS는 약 18.0% 증가하고 p95는 83.2ms에서 61.1ms로 개선됐다. M05-A의 DB CPU 병목 가설은 타당했다.
 
-### 🎯 Mission 06. [장애 시뮬레이션] "리소스 제한과 좀비 서버"
-- **Goal:** 서버 장애 발생 시 Nginx의 Failover 및 무중단 서비스 검증.
-- **Condition:** `docker-compose.yml`에서 App 리소스를 `cpus: '0.1'`로 극단적 제한.
-- **Action:** 부하 테스트 도중 `docker stop [Container_ID]`로 1대 강제 종료.
-- **Acceptance Criteria:**
-    - Nginx가 죽은 서버를 제외하고 나머지 2대로 트래픽 라우팅.
-    - `502 Bad Gateway` 에러 비율 1% 미만 유지.
-
 ---
 
 ## Phase 4. 성능 최적화 (Caching Strategy)
 
-### 🎯 Mission 07. [캐시 적용] "Redis가 Read 병목을 제거하는가"
+### 🎯 Mission 06. [캐시 적용] "Redis가 Read 병목을 제거하는가"
 - **Goal:** M-05에서 확인한 scale-out 한계를 바탕으로, `GET /api/{key}`의 `short_urls` read 경로를 Redis cache로 옮겼을 때 병목이 어떻게 이동하는지 확인한다.
 - **Baseline:** M-05D 결과: `Nginx 0.5 / App 1.0 x3 / DB 1.0 / SMART_BATCH`, 4326 RPS, avg 31ms, p95 61ms, fail 0%.
 - **Architecture:** `Client` -> `Nginx` -> `App 1, 2, 3` -> `Redis` -> `MySQL`
@@ -266,14 +258,14 @@
     - AccessLog DB write는 기존 요구사항이므로 유지한다.
     - Cache hit/miss를 측정할 수 있어야 한다.
     - Cache miss 시에는 MySQL에서 원본 URL을 읽고 Redis에 저장한다.
-- **Mission 07-A. Redis Read-through Cache 도입:**
+- **Mission 06-A. Redis Read-through Cache 도입:**
     - `GET /api/{key}`에서 `short_urls` 조회를 Redis 우선 조회로 변경한다.
     - Cache hit이면 Redis 값으로 즉시 redirect하고, cache miss이면 MySQL 조회 후 Redis에 저장한다.
     - AccessLog 저장 방식은 `SMART_BATCH`를 유지한다.
-- **Mission 07-B. Redis CPU 병목 확인:**
+- **Mission 06-B. Redis CPU 병목 확인:**
     - `REDIS_CPUS=0.25`와 `REDIS_CPUS=0.5`를 비교한다.
     - App 3개 앞단 병목이 Redis로 이동하는지 확인한다.
-- **Mission 07-C. Cache 이후 DB CPU 민감도 확인:**
+- **Mission 06-C. Cache 이후 DB CPU 민감도 확인:**
     - `DB_CPUS=0.5`와 `DB_CPUS=1.0`을 비교한다.
     - Redis hit 비율이 높을 때 DB 병목이 사라지는지, 또는 AccessLog batch write가 여전히 DB 병목인지 확인한다.
 - **Acceptance Criteria:**
@@ -282,6 +274,17 @@
     - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
     - Docker stats로 Nginx, App 1/2/3, Redis, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
     - Cache hit 조건에서도 fail rate 0%를 유지한다.
+
+### 🎯 Mission 07. [장애 시뮬레이션] "Redis 포함 구조에서 일부 App 장애를 견디는가"
+- **Goal:** Redis cache까지 포함한 성능 개선 구조에서 App 인스턴스 장애 발생 시 Nginx가 정상 인스턴스로 트래픽을 우회하는지 확인한다.
+- **Baseline:** Mission 06에서 확정한 Redis cache 구조.
+- **Condition:** 부하 테스트 도중 App 컨테이너 1대를 중지한다.
+- **Action:** `docker stop shortener-app1-mission-06`처럼 App 1대를 강제 종료한다.
+- **Acceptance Criteria:**
+    - Nginx가 죽은 App을 제외하고 나머지 App으로 트래픽을 라우팅한다.
+    - 장애 시점의 fail rate와 p95 spike를 기록한다.
+    - 전체 테스트 기준 `502 Bad Gateway` 또는 요청 실패율 1% 미만을 유지한다.
+    - AccessLog row 증가량이 성공 request count와 일치하는지 확인한다.
 
 ### 🎯 Mission 08. [캐시 관리] "TTL 설정과 정합성 테스트"
 - **Goal:** 캐시 만료(TTL) 시 발생하는 DB 스파이크(Cache Stampede) 관측.
