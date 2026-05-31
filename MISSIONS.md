@@ -19,6 +19,7 @@
 | **M-05D** | DB CPU Sensitivity | 400 | 4326 |        31        |        61        |      0%       |    63%     | DB CPU increase improved throughput |
 | **M-06A** | Redis Cache (ramp) | 400 | 4210 |        32        |        64        |      0%       |    13%     | 99.52% hit, read load moved to Redis |
 | **M-06A** | Redis Cache (400 VU sustain) | 400 | 5572 |        52        |        80        |      0%       |    11%     | 100% hit, DB read effectively removed |
+| **M-07** | App x1 Stop Failover | 400 | 5663 |        53        |        79        |      0%       |    13%     | 0% 502, Nginx routed to healthy apps |
 
 ---
 
@@ -304,6 +305,15 @@
     - 장애 시점의 fail rate와 p95 spike를 기록한다.
     - 전체 테스트 기준 `502 Bad Gateway` 또는 요청 실패율 1% 미만을 유지한다.
     - AccessLog row 증가량이 성공 request count와 일치하는지 확인한다.
+- **Result (M07, 2026-05-31):**
+    - 400 VU, `NGINX_CPUS=0.5`, `APP_CPUS=1.0 x3`, `REDIS_CPUS=0.5`, `DB_CPUS=1.0`, `SMART_BATCH`.
+    - k6 400 VU sustain 진행 중 약 37초 지점에 `docker stop shortener-app1-mission-07`로 app1을 중지했다.
+    - 5662.9 RPS, avg 53.2ms, p95 79.4ms, fail 0%.
+    - `502 Bad Gateway` 0건, server error 0건이었다. 장애 중에도 Nginx가 app2/app3로 트래픽을 우회했다.
+    - Cache hit ratio는 99.83%였다. `shortener_cache_hit` 626,082건, `shortener_cache_miss` 1,014건이었다.
+    - `short_urls`는 1,000 rows, `access_logs`는 627,098 rows였다. k6 요청 627,096건과 수동 캐시 확인 2건이 모두 저장되어 로그 유실은 없었다.
+    - Docker stats summary 기준 Nginx max CPU 39.95%, Redis max CPU 9.34%, DB max CPU 12.60%였다. app1은 중단 영향으로 avg CPU 14.73%였고, app2/app3는 각각 27.78%, 27.04%로 app1보다 높아 장애 후 남은 App으로 부하가 이동한 것으로 해석한다.
+    - Conclusion: App 인스턴스 1대 중단 상황에서도 Nginx passive failover가 정상 동작했다. 400 VU 조건에서 요청 실패와 502 없이 나머지 2대 App이 트래픽을 처리했고, AccessLog 정합성도 유지됐다.
 
 ### 🎯 Mission 08. [캐시 관리] "TTL 설정과 정합성 테스트"
 - **Goal:** 캐시 만료(TTL) 시 발생하는 DB 스파이크(Cache Stampede) 관측.
