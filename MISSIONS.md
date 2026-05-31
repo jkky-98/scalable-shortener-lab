@@ -263,12 +263,6 @@
     - `GET /api/{key}`에서 `short_urls` 조회를 Redis 우선 조회로 변경한다.
     - Cache hit이면 Redis 값으로 즉시 redirect하고, cache miss이면 MySQL 조회 후 Redis에 저장한다.
     - AccessLog 저장 방식은 `SMART_BATCH`를 유지한다.
-- **Mission 06-B. Redis CPU 병목 확인:**
-    - `REDIS_CPUS=0.25`와 `REDIS_CPUS=0.5`를 비교한다.
-    - App 3개 앞단 병목이 Redis로 이동하는지 확인한다.
-- **Mission 06-C. Cache 이후 DB CPU 민감도 확인:**
-    - `DB_CPUS=0.5`와 `DB_CPUS=1.0`을 비교한다.
-    - Redis hit 비율이 높을 때 DB 병목이 사라지는지, 또는 AccessLog batch write가 여전히 DB 병목인지 확인한다.
 - **Acceptance Criteria:**
     - M-05D 대비 RPS 또는 p95가 의미 있게 개선되는지 확인한다.
     - Redis cache hit ratio를 기록한다.
@@ -288,12 +282,23 @@
     - Cache hit ratio는 100%였다. seed된 1,000개 short key가 이미 Redis에 적재된 warm cache 상태였으므로, redirect 요청의 `short_urls` read는 사실상 MySQL이 아니라 Redis에서 처리됐다.
     - Docker stats summary 기준 Redis max CPU 8.37%, DB max CPU 10.51%, Nginx max CPU 36.98%, App max CPU 29.60~38.85%였다. 서버 컨테이너 어느 쪽도 CPU limit에 붙지 않았다.
     - Conclusion: Redis read-through cache는 정상 동작했고, cache hit가 99.52~100%에 도달하면서 `short_urls` read 부하를 MySQL에서 Redis로 거의 완전히 이전했다. 그 결과 DB CPU는 M05-D의 max 63.21%에서 M06-A의 10~13% 수준으로 크게 낮아졌다. 다만 RPS가 즉시 크게 증가하지는 않았으므로, Redis의 1차 효과는 처리량 폭증보다 DB read 부하 제거와 DB 리소스 여유 확보로 해석하는 것이 타당하다.
+- **Mission 06 종료 판단:**
+    - M06-B(Redis CPU 민감도)와 M06-C(DB CPU 민감도)는 별도 진행하지 않는다.
+    - 이번 조건에서는 seed 데이터가 1,000개뿐이고 warm cache hit ratio가 99.52~100%에 도달했기 때문에, Redis/DB CPU를 더 줄이는 실험은 결과가 예측 가능하고 학습 가치가 낮다.
+    - 캐시에서 더 중요한 변수는 Redis 자체 속도가 아니라 hit ratio, TTL, key cardinality, hot/cold key 분포, cache miss burst, cache stampede다.
+    - 따라서 Mission 06은 "read-through cache를 도입해 `short_urls` read 부하를 MySQL에서 Redis로 이전했다"는 결론으로 종료하고, TTL과 stampede 성격의 캐시 품질 검증은 Mission 08에서 다룬다.
 
 ### 🎯 Mission 07. [장애 시뮬레이션] "Redis 포함 구조에서 일부 App 장애를 견디는가"
 - **Goal:** Redis cache까지 포함한 성능 개선 구조에서 App 인스턴스 장애 발생 시 Nginx가 정상 인스턴스로 트래픽을 우회하는지 확인한다.
 - **Baseline:** Mission 06에서 확정한 Redis cache 구조.
 - **Condition:** 부하 테스트 도중 App 컨테이너 1대를 중지한다.
-- **Action:** `docker stop shortener-app1-mission-06`처럼 App 1대를 강제 종료한다.
+- **Design Note:** 앱 코드는 수정하지 않는다. 장애는 애플리케이션 예외가 아니라 컨테이너 중단으로 발생시킨다.
+- **Architecture:** `Client` -> `Nginx(passive failover)` -> `App 1, 2, 3` -> `Redis` -> `MySQL`
+- **Nginx failover setting:**
+    - upstream 서버별 `max_fails=1`, `fail_timeout=5s`.
+    - `proxy_next_upstream error timeout http_502 http_503 http_504`.
+    - `proxy_next_upstream_tries 3`.
+- **Action:** k6 400 VU sustain 진행 중 `docker stop shortener-app1-mission-07`로 App 1대를 중지한다.
 - **Acceptance Criteria:**
     - Nginx가 죽은 App을 제외하고 나머지 App으로 트래픽을 라우팅한다.
     - 장애 시점의 fail rate와 p95 spike를 기록한다.
