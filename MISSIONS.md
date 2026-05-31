@@ -17,7 +17,8 @@
 | **M-05B** | App x3 Fixed Total App CPU | 400 | 827 |       209        |       1100       |      0%       |    20%     | App CPU quota dominates |
 | **M-05C** | Nginx CPU Sensitivity | 400 | 3678 |        38        |        87        |      0%       |    53%     | Nginx 0.25 CPU limit visible |
 | **M-05D** | DB CPU Sensitivity | 400 | 4326 |        31        |        61        |      0%       |    63%     | DB CPU increase improved throughput |
-| **M-06** | Redis Cache | 400 |  -  |        -         |        -         |       -       |     -      | Ready for measurement |
+| **M-06A** | Redis Cache (ramp) | 400 | 4210 |        32        |        64        |      0%       |    13%     | 99.52% hit, read load moved to Redis |
+| **M-06A** | Redis Cache (400 VU sustain) | 400 | 5572 |        52        |        80        |      0%       |    11%     | 100% hit, DB read effectively removed |
 
 ---
 
@@ -274,6 +275,19 @@
     - AccessLog row 증가량이 k6 request count와 일치하는지 확인한다.
     - Docker stats로 Nginx, App 1/2/3, Redis, DB 중 어느 컨테이너가 먼저 CPU limit에 닿는지 확인한다.
     - Cache hit 조건에서도 fail rate 0%를 유지한다.
+- **Result (M06-A, 2026-05-31, short ramp):**
+    - 400 VU, `NGINX_CPUS=0.5`, `APP_CPUS=1.0 x3`, `REDIS_CPUS=0.5`, `DB_CPUS=1.0`, `SMART_BATCH`.
+    - 4210.2 RPS, avg 32.2ms, p95 63.5ms, fail 0%.
+    - Cache hit ratio는 99.52%였다. `shortener_cache_hit` 209,535건, `shortener_cache_miss` 1,000건, cache error/bypass 0건이었다.
+    - `short_urls`는 1,000 rows, `access_logs`는 210,537 rows였다. k6 요청 210,535건과 수동 캐시 확인 2건이 모두 저장되어 로그 유실은 없었다.
+    - Docker stats summary 기준 Redis max CPU 10.29%, DB max CPU 12.53%, Nginx max CPU 41.40%, App max CPU 76.24~80.81%였다.
+    - M05-D의 같은 short ramp 기준 결과인 4326 RPS, p95 61.1ms와 비교하면 처리량 자체는 개선되지 않았다. 따라서 M05-D 시점의 주 병목은 `short_urls` read만은 아니었다.
+- **Result (M06-A, 2026-05-31, 400 VU sustain):**
+    - 10초 ramp-up, 60초 400 VU 유지, 10초 ramp-down 조건으로 재측정했다.
+    - 5571.8 RPS, avg 52.3ms, p95 80.0ms, fail 0%.
+    - Cache hit ratio는 100%였다. seed된 1,000개 short key가 이미 Redis에 적재된 warm cache 상태였으므로, redirect 요청의 `short_urls` read는 사실상 MySQL이 아니라 Redis에서 처리됐다.
+    - Docker stats summary 기준 Redis max CPU 8.37%, DB max CPU 10.51%, Nginx max CPU 36.98%, App max CPU 29.60~38.85%였다. 서버 컨테이너 어느 쪽도 CPU limit에 붙지 않았다.
+    - Conclusion: Redis read-through cache는 정상 동작했고, cache hit가 99.52~100%에 도달하면서 `short_urls` read 부하를 MySQL에서 Redis로 거의 완전히 이전했다. 그 결과 DB CPU는 M05-D의 max 63.21%에서 M06-A의 10~13% 수준으로 크게 낮아졌다. 다만 RPS가 즉시 크게 증가하지는 않았으므로, Redis의 1차 효과는 처리량 폭증보다 DB read 부하 제거와 DB 리소스 여유 확보로 해석하는 것이 타당하다.
 
 ### 🎯 Mission 07. [장애 시뮬레이션] "Redis 포함 구조에서 일부 App 장애를 견디는가"
 - **Goal:** Redis cache까지 포함한 성능 개선 구조에서 App 인스턴스 장애 발생 시 Nginx가 정상 인스턴스로 트래픽을 우회하는지 확인한다.
