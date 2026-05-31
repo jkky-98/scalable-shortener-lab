@@ -26,6 +26,19 @@ spring:
   sql:
     init:
       mode: never
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: ${SPRING_DATA_REDIS_TIMEOUT:2s}
+      repositories:
+        enabled: false
+
+shortener:
+  cache:
+    enabled: ${SHORTENER_CACHE_ENABLED:false}
+    ttl-seconds: ${SHORTENER_CACHE_TTL_SECONDS:3600}
+    key-prefix: ${SHORTENER_CACHE_KEY_PREFIX:shortener:url:}
 
 logging:
   level:

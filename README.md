@@ -86,6 +86,7 @@ scalable-shortener-lab/
 │   ├── phase-2/             # Mission 03 load-test assets
 │   ├── missions-04/         # Nginx entrypoint experiment
 │   ├── missions-05/         # App scale-out experiment
+│   ├── missions-06/         # Redis cache experiment
 │   └── ...
 ├── Dockerfile               # Base Image Builder
 └── MISSIONS.md              # Detailed Mission Guide

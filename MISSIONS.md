@@ -17,7 +17,7 @@
 | **M-05B** | App x3 Fixed Total App CPU | 400 | 827 |       209        |       1100       |      0%       |    20%     | App CPU quota dominates |
 | **M-05C** | Nginx CPU Sensitivity | 400 | 3678 |        38        |        87        |      0%       |    53%     | Nginx 0.25 CPU limit visible |
 | **M-05D** | DB CPU Sensitivity | 400 | 4326 |        31        |        61        |      0%       |    63%     | DB CPU increase improved throughput |
-| **M-07** | Redis Cache | 500 |  -  |        -         |        -         |       -       |     -      | -                 |
+| **M-06** | Redis Cache | 400 |  -  |        -         |        -         |       -       |     -      | Ready for measurement |
 
 ---
 

@@ -4,6 +4,8 @@ import com.example.shortener.scalable_shortener.domain.entity.AccessLog;
 import com.example.shortener.scalable_shortener.domain.entity.ShortUrl;
 import com.example.shortener.scalable_shortener.domain.repository.ShortUrlRepository;
 import com.example.shortener.scalable_shortener.domain.service.AccessLogService;
+import com.example.shortener.scalable_shortener.domain.service.ShortUrlLookupResult;
+import com.example.shortener.scalable_shortener.domain.service.ShortUrlLookupService;
 import com.example.shortener.scalable_shortener.utils.Base62;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class UrlShortenerController {
 
     private final ShortUrlRepository shortUrlRepository;
     private final AccessLogService accessLogService;
+    private final ShortUrlLookupService shortUrlLookupService;
     private final Base62 base62;
 
     // [Mission 1] 헬스 체크 & IP 확인
@@ -64,9 +67,9 @@ public class UrlShortenerController {
     // [Mission 2] 리다이렉트 (Read + AccessLog Write)
     @GetMapping("/api/{key}")
     public ResponseEntity<?> redirect(@PathVariable String key, HttpServletRequest request) {
-        ShortUrl shortUrl = shortUrlRepository.findByShortKey(key).orElse(null);
+        ShortUrlLookupResult lookupResult = shortUrlLookupService.findOriginalUrl(key);
 
-        if (shortUrl == null) {
+        if (!lookupResult.found()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -80,7 +83,19 @@ public class UrlShortenerController {
         accessLogService.save(log);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setLocation(URI.create(shortUrl.getOriginalUrl()));
+        headers.setLocation(URI.create(lookupResult.originalUrl()));
+        headers.add("X-Shortener-Cache", lookupResult.cacheStatus().name());
         return new ResponseEntity<>(headers, HttpStatus.FOUND); // 302 Found
+    }
+
+    @GetMapping("/api/cache/stats")
+    public ResponseEntity<Map<String, Object>> cacheStats() {
+        return ResponseEntity.ok(shortUrlLookupService.stats());
+    }
+
+    @PostMapping("/api/cache/stats/reset")
+    public ResponseEntity<Void> resetCacheStats() {
+        shortUrlLookupService.resetStats();
+        return ResponseEntity.noContent().build();
     }
 }
