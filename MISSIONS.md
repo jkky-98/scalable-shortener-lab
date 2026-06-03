@@ -316,9 +316,26 @@
     - Conclusion: App 인스턴스 1대 중단 상황에서도 Nginx passive failover가 정상 동작했다. 400 VU 조건에서 요청 실패와 502 없이 나머지 2대 App이 트래픽을 처리했고, AccessLog 정합성도 유지됐다.
 
 ### 🎯 Mission 08. [캐시 관리] "TTL 설정과 정합성 테스트"
-- **Goal:** 캐시 만료(TTL) 시 발생하는 DB 스파이크(Cache Stampede) 관측.
-- **Condition:** Redis TTL을 10초로 설정.
-- **Verification:** k6 그래프에서 10초 주기로 튀는 Latency 패턴(톱니바퀴 모양) 캡처 및 분석.
+- **Goal:** Redis TTL 만료 시점에 cache miss가 몰리면서 DB read spike와 latency spike가 발생하는지 확인한다.
+- **Baseline:** Mission 06/07에서 확정한 Redis 포함 구조. 단, cache TTL을 3600초에서 10초로 줄인다.
+- **Architecture:** `Client` -> `Nginx` -> `App 1, 2, 3` -> `Redis(TTL 10s)` -> `MySQL`
+- **Constraint:**
+    - 앱 코드는 수정하지 않는다.
+    - Mission 06에서 추가한 `SHORTENER_CACHE_TTL_SECONDS` 설정만 사용한다.
+    - AccessLog DB write는 기존 요구사항이므로 유지한다.
+- **Mission 08-A. Hot Key TTL Stampede:**
+    - 모든 VU가 같은 short key 1개를 조회한다.
+    - Redis TTL 10초가 만료될 때 같은 key에 대한 miss가 한 시점에 몰리는지 확인한다.
+    - `k6 --out json` 결과를 초 단위 CSV로 변환해 `cache_misses`, `duration_p95_ms`, `duration_max_ms`를 함께 본다.
+- **Mission 08-B. Random Key TTL 비교:**
+    - 1,000개 short key를 랜덤 조회한다.
+    - hot key 1개 조건보다 TTL 만료와 miss가 분산되는지 비교한다.
+- **Acceptance Criteria:**
+    - TTL 10초 주기로 `cache_misses`가 증가하는지 확인한다.
+    - miss가 발생한 초에 p95 또는 max latency가 함께 튀는지 확인한다.
+    - Docker stats에서 DB CPU spike가 함께 나타나는지 확인한다.
+    - hot key 1개와 random key 1,000개 조건의 miss 분포와 latency spike를 비교한다.
+    - spike가 확인되면 현재 read-through cache에는 stampede 방지(single-flight, lock, TTL jitter 등)가 없다는 결론을 기록한다.
 
 ---
 

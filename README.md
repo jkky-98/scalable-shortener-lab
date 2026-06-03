@@ -87,6 +87,8 @@ scalable-shortener-lab/
 │   ├── missions-04/         # Nginx entrypoint experiment
 │   ├── missions-05/         # App scale-out experiment
 │   ├── missions-06/         # Redis cache experiment
+│   ├── missions-07/         # App failover experiment
+│   ├── missions-08/         # TTL and cache stampede experiment
 │   └── ...
 ├── Dockerfile               # Base Image Builder
 └── MISSIONS.md              # Detailed Mission Guide
