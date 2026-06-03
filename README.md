@@ -89,6 +89,7 @@ scalable-shortener-lab/
 │   ├── missions-06/         # Redis cache experiment
 │   ├── missions-07/         # App failover experiment
 │   ├── missions-08/         # TTL and cache stampede experiment
+│   ├── missions-09/         # MySQL replication and read/write split
 │   └── ...
 ├── Dockerfile               # Base Image Builder
 └── MISSIONS.md              # Detailed Mission Guide

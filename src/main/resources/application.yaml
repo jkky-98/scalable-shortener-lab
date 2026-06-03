@@ -35,6 +35,25 @@ spring:
         enabled: false
 
 shortener:
+  datasource:
+    routing:
+      enabled: ${SHORTENER_DATASOURCE_ROUTING_ENABLED:false}
+      primary:
+        url: ${SHORTENER_DATASOURCE_PRIMARY_URL:${spring.datasource.url}}
+        username: ${SHORTENER_DATASOURCE_PRIMARY_USERNAME:${spring.datasource.username}}
+        password: ${SHORTENER_DATASOURCE_PRIMARY_PASSWORD:${spring.datasource.password}}
+        driver-class-name: ${SHORTENER_DATASOURCE_PRIMARY_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+        maximum-pool-size: ${SHORTENER_DATASOURCE_PRIMARY_MAXIMUM_POOL_SIZE:10}
+        minimum-idle: ${SHORTENER_DATASOURCE_PRIMARY_MINIMUM_IDLE:2}
+        connection-timeout: ${SHORTENER_DATASOURCE_PRIMARY_CONNECTION_TIMEOUT:30000}
+      replica:
+        url: ${SHORTENER_DATASOURCE_REPLICA_URL:${spring.datasource.url}}
+        username: ${SHORTENER_DATASOURCE_REPLICA_USERNAME:${spring.datasource.username}}
+        password: ${SHORTENER_DATASOURCE_REPLICA_PASSWORD:${spring.datasource.password}}
+        driver-class-name: ${SHORTENER_DATASOURCE_REPLICA_DRIVER_CLASS_NAME:com.mysql.cj.jdbc.Driver}
+        maximum-pool-size: ${SHORTENER_DATASOURCE_REPLICA_MAXIMUM_POOL_SIZE:10}
+        minimum-idle: ${SHORTENER_DATASOURCE_REPLICA_MINIMUM_IDLE:2}
+        connection-timeout: ${SHORTENER_DATASOURCE_REPLICA_CONNECTION_TIMEOUT:30000}
   cache:
     enabled: ${SHORTENER_CACHE_ENABLED:false}
     ttl-seconds: ${SHORTENER_CACHE_TTL_SECONDS:3600}

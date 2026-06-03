@@ -1,8 +1,6 @@
 package com.example.shortener.scalable_shortener.domain.service;
 
 import com.example.shortener.scalable_shortener.config.CacheProperties;
-import com.example.shortener.scalable_shortener.domain.entity.ShortUrl;
-import com.example.shortener.scalable_shortener.domain.repository.ShortUrlRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -18,7 +16,7 @@ import java.util.concurrent.atomic.LongAdder;
 @RequiredArgsConstructor
 public class ShortUrlLookupService {
 
-    private final ShortUrlRepository shortUrlRepository;
+    private final ShortUrlReadService shortUrlReadService;
     private final StringRedisTemplate redisTemplate;
     private final CacheProperties cacheProperties;
     private final LongAdder cacheHits = new LongAdder();
@@ -94,8 +92,7 @@ public class ShortUrlLookupService {
     }
 
     private ShortUrlLookupResult findFromDatabase(String shortKey, CacheLookupStatus status) {
-        return shortUrlRepository.findByShortKey(shortKey)
-                .map(ShortUrl::getOriginalUrl)
+        return shortUrlReadService.findOriginalUrl(shortKey)
                 .map(originalUrl -> new ShortUrlLookupResult(originalUrl, status))
                 .orElseGet(() -> new ShortUrlLookupResult(null, status));
     }

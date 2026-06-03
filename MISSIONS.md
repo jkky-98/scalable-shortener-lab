@@ -364,13 +364,37 @@
 ## Phase 5. 고가용성 아키텍처 (High Availability)
 
 ### 🎯 Mission 09. [DB 이중화] "Replication과 Read/Write Splitting"
-- **Goal:** 쓰기(Master)와 읽기(Slave) 부하 분리.
+- **Goal:** MySQL primary/replica replication을 구성하고, Spring read-only transaction 기반 read/write split이 실제 병목을 어떻게 이동시키는지 확인한다.
+- **Baseline:** Mission 05-D의 단일 DB + App 3개 구조와 Mission 06/08의 Redis cache 구조.
 - **Architecture:**
-    - `Master DB` (Write)
-    - `Slave DB` (Read)
-- **Verification:**
-    - Spring `@Transactional(readOnly=true)` 라우팅 동작 확인.
-    - Master DB 컨테이너 중지 시에도 `GET` 요청 성공 확인.
+    - `Client` -> `Nginx` -> `App 1, 2, 3`
+    - Write transaction -> `MySQL primary`
+    - Read-only transaction -> `MySQL replica`
+    - Redis ON 조건에서는 `Redis hit`가 우선이고, miss/bypass 시 read-only DB lookup이 replica로 간다.
+- **Design Note:**
+    - 이전 미션을 깨지 않기 위해 `SHORTENER_DATASOURCE_ROUTING_ENABLED=false`를 기본값으로 둔다.
+    - M09 compose에서만 `SHORTENER_DATASOURCE_ROUTING_ENABLED=true`를 켠다.
+    - `@Transactional(readOnly=true)`가 실제 Spring proxy를 타야 하므로 `ShortUrlReadService`를 별도 서비스로 분리한다.
+    - AccessLog write는 기존 요구사항이므로 primary에 남는다. 즉 read/write split은 `short_urls` read를 primary에서 떼어내는 실험이지, 모든 DB 부하를 제거하는 실험은 아니다.
+- **Mission 09-A. Replication Infra Validation:**
+    - MySQL primary와 replica를 GTID replication으로 연결한다.
+    - primary에 probe row를 쓰고 replica에서 같은 row가 조회되는지 확인한다.
+    - seed된 `short_urls`와 부하 테스트 중 증가하는 `access_logs`가 replica에도 복제되는지 확인한다.
+- **Mission 09-B. DB Read/Write Split, Redis OFF:**
+    - `SHORTENER_CACHE_ENABLED=false`.
+    - `GET /api/{key}`는 Redis BYPASS 상태로 동작하고, `short_urls` read는 replica로 라우팅된다.
+    - `/api/shorten`과 AccessLog write는 primary로 라우팅된다.
+    - Docker stats에서 primary와 replica CPU를 분리해서 기록한다.
+- **Mission 09-C. DB Split + Redis ON:**
+    - `SHORTENER_CACHE_ENABLED=true`, TTL은 기본 3600초.
+    - 초반 miss 이후 cache hit ratio가 높아지면 `short_urls` read가 Redis로 이동하고 replica 부하도 낮아지는지 확인한다.
+    - M09-B와 비교해 Redis가 primary뿐 아니라 replica read 부하까지 줄이는지 본다.
+- **Acceptance Criteria:**
+    - M09-A에서 `Replica_IO_Running=Yes`, `Replica_SQL_Running=Yes`를 확인한다.
+    - M09-B에서 `X-Shortener-Cache: BYPASS`가 관측되고 fail rate 1% 미만을 유지한다.
+    - M09-B Docker stats에서 replica가 read 부하를 받는지 확인한다.
+    - M09-C에서 cache hit ratio가 99% 이상으로 올라가고 replica 부하가 M09-B보다 낮아지는지 확인한다.
+    - AccessLog row 증가량이 k6 successful request count와 일치한다.
 
 ### 🎯 Mission 10. [최종 리포트] "10만 건 처리 데이터 시각화"
 - **Goal:** 대시보드를 통해 최종 아키텍처의 안정성 증명.
