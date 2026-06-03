@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="680" viewBox="0 0 1200 680">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#1f2937}.axis{stroke:#374151;stroke-width:1}.grid{stroke:#e5e7eb;stroke-width:1}.avg{fill:none;stroke:#2563eb;stroke-width:2}.p95{fill:none;stroke:#dc2626;stroke-width:2.5}.max{fill:none;stroke:#7c3aed;stroke-width:1.8;opacity:.75}.miss{fill:#f59e0b;opacity:.45}.label{font-size:13px}.title{font-size:22px;font-weight:700}.subtitle{font-size:13px;fill:#6b7280}.legend{font-size:13px}</style>
+<text class="title" x="78" y="32">M08-B Random Key TTL 10s: Cache Miss and Latency</text>
+<text class="subtitle" x="78" y="54">400 VU, 1000 random keys. Bars show cache misses per second; lines show latency.</text>
+<line class="grid" x1="78" y1="610.00" x2="1110" y2="610.00"/>
+<text class="label" x="68" y="614.00" text-anchor="end">0ms</text>
+<line class="grid" x1="78" y1="502.00" x2="1110" y2="502.00"/>
+<text class="label" x="68" y="506.00" text-anchor="end">260ms</text>
+<line class="grid" x1="78" y1="394.00" x2="1110" y2="394.00"/>
+<text class="label" x="68" y="398.00" text-anchor="end">520ms</text>
+<line class="grid" x1="78" y1="286.00" x2="1110" y2="286.00"/>
+<text class="label" x="68" y="290.00" text-anchor="end">780ms</text>
+<line class="grid" x1="78" y1="178.00" x2="1110" y2="178.00"/>
+<text class="label" x="68" y="182.00" text-anchor="end">1040ms</text>
+<line class="grid" x1="78" y1="70.00" x2="1110" y2="70.00"/>
+<text class="label" x="68" y="74.00" text-anchor="end">1300ms</text>
+<text class="label" x="1120" y="614.00">0</text>
+<text class="label" x="1120" y="506.00">140</text>
+<text class="label" x="1120" y="398.00">280</text>
+<text class="label" x="1120" y="290.00">420</text>
+<text class="label" x="1120" y="182.00">560</text>
+<text class="label" x="1120" y="74.00">700</text>
+<line class="grid" x1="78.00" y1="70" x2="78.00" y2="610"/>
+<text class="label" x="78.00" y="634" text-anchor="middle">0s</text>
+<line class="grid" x1="171.82" y1="70" x2="171.82" y2="610"/>
+<text class="label" x="171.82" y="634" text-anchor="middle">10s</text>
+<line class="grid" x1="265.64" y1="70" x2="265.64" y2="610"/>
+<text class="label" x="265.64" y="634" text-anchor="middle">20s</text>
+<line class="grid" x1="359.45" y1="70" x2="359.45" y2="610"/>
+<text class="label" x="359.45" y="634" text-anchor="middle">30s</text>
+<line class="grid" x1="453.27" y1="70" x2="453.27" y2="610"/>
+<text class="label" x="453.27" y="634" text-anchor="middle">40s</text>
+<line class="grid" x1="547.09" y1="70" x2="547.09" y2="610"/>
+<text class="label" x="547.09" y="634" text-anchor="middle">50s</text>
+<line class="grid" x1="640.91" y1="70" x2="640.91" y2="610"/>
+<text class="label" x="640.91" y="634" text-anchor="middle">60s</text>
+<line class="grid" x1="734.73" y1="70" x2="734.73" y2="610"/>
+<text class="label" x="734.73" y="634" text-anchor="middle">70s</text>
+<line class="grid" x1="828.55" y1="70" x2="828.55" y2="610"/>
+<text class="label" x="828.55" y="634" text-anchor="middle">80s</text>
+<line class="grid" x1="922.36" y1="70" x2="922.36" y2="610"/>
+<text class="label" x="922.36" y="634" text-anchor="middle">90s</text>
+<line class="grid" x1="1016.18" y1="70" x2="1016.18" y2="610"/>
+<text class="label" x="1016.18" y="634" text-anchor="middle">100s</text>
+<line class="grid" x1="1110.00" y1="70" x2="1110.00" y2="610"/>
+<text class="label" x="1110.00" y="634" text-anchor="middle">110s</text>
+<line class="axis" x1="78" y1="70" x2="78" y2="610"/>
+<line class="axis" x1="78" y1="610" x2="1110" y2="610"/>
+<line class="axis" x1="1110" y1="70" x2="1110" y2="610"/>
+<text class="label" x="78" y="662">Elapsed seconds</text>
+<text class="label" x="20" y="54">Latency</text>
+<text class="label" x="1118" y="54">Misses/sec</text>
+<rect class="miss" x="74.51" y="386.29" width="6.97" height="223.71"><title>0s: 290 misses</title></rect>
+<rect class="miss" x="83.90" y="131.71" width="6.97" height="478.29"><title>1s: 620 misses</title></rect>
+<rect class="miss" x="93.28" y="537.49" width="6.97" height="72.51"><title>2s: 94 misses</title></rect>
+<rect class="miss" x="102.66" y="606.14" width="6.97" height="3.86"><title>3s: 5 misses</title></rect>
+<rect class="miss" x="168.33" y="471.91" width="6.97" height="138.09"><title>10s: 179 misses</title></rect>
+<rect class="miss" x="177.71" y="86.20" width="6.97" height="523.80"><title>11s: 679 misses</title></rect>
+<rect class="miss" x="187.10" y="475.77" width="6.97" height="134.23"><title>12s: 174 misses</title></rect>
+<rect class="miss" x="196.48" y="599.97" width="6.97" height="10.03"><title>13s: 13 misses</title></rect>
+<rect class="miss" x="262.15" y="546.74" width="6.97" height="63.26"><title>20s: 82 misses</title></rect>
+<rect class="miss" x="271.53" y="77.71" width="6.97" height="532.29"><title>21s: 690 misses</title></rect>
+<rect class="miss" x="280.91" y="426.40" width="6.97" height="183.60"><title>22s: 238 misses</title></rect>
+<rect class="miss" x="290.30" y="591.49" width="6.97" height="18.51"><title>23s: 24 misses</title></rect>
+<rect class="miss" x="355.97" y="579.91" width="6.97" height="30.09"><title>30s: 39 misses</title></rect>
+<rect class="miss" x="365.35" y="134.03" width="6.97" height="475.97"><title>31s: 617 misses</title></rect>
+<rect class="miss" x="374.73" y="348.49" width="6.97" height="261.51"><title>32s: 339 misses</title></rect>
+<rect class="miss" x="384.11" y="579.14" width="6.97" height="30.86"><title>33s: 40 misses</title></rect>
+<rect class="miss" x="393.50" y="609.23" width="6.97" height="0.77"><title>34s: 1 misses</title></rect>
+<rect class="miss" x="449.79" y="597.66" width="6.97" height="12.34"><title>40s: 16 misses</title></rect>
+<rect class="miss" x="459.17" y="230.46" width="6.97" height="379.54"><title>41s: 492 misses</title></rect>
+<rect class="miss" x="468.55" y="269.80" width="6.97" height="340.20"><title>42s: 441 misses</title></rect>
+<rect class="miss" x="477.93" y="550.60" width="6.97" height="59.40"><title>43s: 77 misses</title></rect>
+<rect class="miss" x="487.31" y="606.14" width="6.97" height="3.86"><title>44s: 5 misses</title></rect>
+<rect class="miss" x="543.60" y="607.69" width="6.97" height="2.31"><title>50s: 3 misses</title></rect>
+<rect class="miss" x="552.99" y="296.80" width="6.97" height="313.20"><title>51s: 406 misses</title></rect>
+<rect class="miss" x="562.37" y="225.06" width="6.97" height="384.94"><title>52s: 499 misses</title></rect>
+<rect class="miss" x="571.75" y="527.46" width="6.97" height="82.54"><title>53s: 107 misses</title></rect>
+<rect class="miss" x="581.13" y="601.51" width="6.97" height="8.49"><title>54s: 11 misses</title></rect>
+<rect class="miss" x="637.42" y="609.23" width="6.97" height="0.77"><title>60s: 1 misses</title></rect>
+<rect class="miss" x="646.80" y="371.63" width="6.97" height="238.37"><title>61s: 309 misses</title></rect>
+<rect class="miss" x="656.19" y="183.40" width="6.97" height="426.60"><title>62s: 553 misses</title></rect>
+<rect class="miss" x="665.57" y="498.14" width="6.97" height="111.86"><title>63s: 145 misses</title></rect>
+<rect class="miss" x="674.95" y="596.11" width="6.97" height="13.89"><title>64s: 18 misses</title></rect>
+<rect class="miss" x="740.62" y="457.26" width="6.97" height="152.74"><title>71s: 198 misses</title></rect>
+<rect class="miss" x="750.00" y="157.94" width="6.97" height="452.06"><title>72s: 586 misses</title></rect>
+<rect class="miss" x="759.39" y="438.74" width="6.97" height="171.26"><title>73s: 222 misses</title></rect>
+<rect class="miss" x="768.77" y="589.94" width="6.97" height="20.06"><title>74s: 26 misses</title></rect>
+<rect class="miss" x="834.44" y="507.40" width="6.97" height="102.60"><title>81s: 133 misses</title></rect>
+<rect class="miss" x="843.82" y="184.17" width="6.97" height="425.83"><title>82s: 552 misses</title></rect>
+<rect class="miss" x="853.20" y="387.06" width="6.97" height="222.94"><title>83s: 289 misses</title></rect>
+<rect class="miss" x="862.59" y="574.51" width="6.97" height="35.49"><title>84s: 46 misses</title></rect>
+<rect class="miss" x="871.97" y="609.23" width="6.97" height="0.77"><title>85s: 1 misses</title></rect>
+<rect class="miss" x="928.26" y="545.97" width="6.97" height="64.03"><title>91s: 83 misses</title></rect>
+<rect class="miss" x="937.64" y="208.09" width="6.97" height="401.91"><title>92s: 521 misses</title></rect>
+<rect class="miss" x="947.02" y="353.89" width="6.97" height="256.11"><title>93s: 332 misses</title></rect>
+<rect class="miss" x="956.40" y="543.66" width="6.97" height="66.34"><title>94s: 86 misses</title></rect>
+<rect class="miss" x="965.79" y="604.60" width="6.97" height="5.40"><title>95s: 7 misses</title></rect>
+<rect class="miss" x="1022.08" y="573.74" width="6.97" height="36.26"><title>101s: 47 misses</title></rect>
+<rect class="miss" x="1031.46" y="302.20" width="6.97" height="307.80"><title>102s: 399 misses</title></rect>
+<rect class="miss" x="1040.84" y="272.89" width="6.97" height="337.11"><title>103s: 437 misses</title></rect>
+<rect class="miss" x="1050.22" y="515.11" width="6.97" height="94.89"><title>104s: 123 misses</title></rect>
+<rect class="miss" x="1059.60" y="599.20" width="6.97" height="10.80"><title>105s: 14 misses</title></rect>
+<rect class="miss" x="1068.99" y="609.23" width="6.97" height="0.77"><title>106s: 1 misses</title></rect>
+<polyline class="max" points="78.00,591.14 87.38,591.25 96.76,587.58 106.15,592.67 115.53,468.68 124.91,98.74 134.29,510.61 143.67,342.58 153.05,336.78 162.44,495.39 171.82,379.66 181.20,487.68 190.58,375.70 199.96,478.63 209.35,341.85 218.73,380.82 228.11,379.90 237.49,499.12 246.87,382.63 256.25,465.43 265.64,384.58 275.02,488.91 284.40,371.67 293.78,493.91 303.16,376.49 312.55,492.38 321.93,496.00 331.31,378.48 340.69,495.98 350.07,483.52 359.45,493.75 368.84,494.32 378.22,491.02 387.60,492.79 396.98,500.40 406.36,380.33 415.75,377.44 425.13,478.87 434.51,348.10 443.89,498.77 453.27,380.77 462.65,484.47 472.04,485.76 481.42,488.90 490.80,488.46 500.18,485.22 509.56,374.80 518.95,492.34 528.33,488.50 537.71,473.43 547.09,371.55 556.47,449.06 565.85,490.42 575.24,367.00 584.62,461.68 594.00,349.14 603.38,364.95 612.76,459.81 622.15,482.15 631.53,355.59 640.91,483.09 650.29,483.49 659.67,367.17 669.05,181.97 678.44,483.69 687.82,490.22 697.20,485.67 706.58,351.13 715.96,368.19 725.35,491.73 734.73,494.51 744.11,482.31 753.49,481.92 762.87,478.62 772.25,492.79 781.64,489.23 791.02,364.79 800.40,488.34 809.78,486.94 819.16,491.78 828.55,378.30 837.93,489.60 847.31,487.96 856.69,372.54 866.07,367.58 875.45,486.34 884.84,364.09 894.22,488.43 903.60,361.22 912.98,485.22 922.36,465.49 931.75,367.49 941.13,372.15 950.51,371.95 959.89,473.87 969.27,478.98 978.65,493.67 988.04,480.45 997.42,369.83 1006.80,491.67 1016.18,362.86 1025.56,496.36 1034.95,503.02 1044.33,511.45 1053.71,391.08 1063.09,526.92 1072.47,573.83 1081.85,590.70 1091.24,595.02 1100.62,596.62 1110.00,600.85"/>
+<polyline class="p95" points="78.00,599.99 87.38,601.20 96.76,591.71 106.15,599.37 115.53,542.54 124.91,550.55 134.29,590.49 143.67,514.17 153.05,546.36 162.44,581.09 171.82,538.74 181.20,573.33 190.58,574.85 199.96,578.69 209.35,581.28 218.73,576.46 228.11,580.29 237.49,582.23 246.87,580.80 256.25,580.63 265.64,572.29 275.02,578.07 284.40,579.47 293.78,580.92 303.16,578.11 312.55,577.64 321.93,579.91 331.31,578.44 340.69,577.31 350.07,572.73 359.45,576.56 368.84,576.11 378.22,581.99 387.60,579.78 396.98,582.90 406.36,582.23 415.75,577.82 425.13,583.47 434.51,571.57 443.89,581.14 453.27,580.42 462.65,571.10 472.04,575.17 481.42,578.54 490.80,576.91 500.18,572.26 509.56,577.16 518.95,579.30 528.33,576.50 537.71,567.49 547.09,491.97 556.47,551.40 565.85,577.32 575.24,560.67 584.62,561.80 594.00,556.94 603.38,468.49 612.76,558.47 622.15,579.88 631.53,569.62 640.91,574.16 650.29,571.76 659.67,568.57 669.05,577.22 678.44,574.45 687.82,577.52 697.20,569.31 706.58,565.62 715.96,569.65 725.35,580.24 734.73,578.88 744.11,572.66 753.49,576.61 762.87,572.81 772.25,579.64 781.64,573.01 791.02,578.16 800.40,579.56 809.78,573.61 819.16,578.53 828.55,573.51 837.93,579.81 847.31,576.81 856.69,572.55 866.07,579.98 875.45,575.06 884.84,572.70 894.22,574.48 903.60,571.84 912.98,575.39 922.36,568.96 931.75,576.79 941.13,573.43 950.51,579.53 959.89,562.89 969.27,568.88 978.65,573.72 988.04,568.04 997.42,573.27 1006.80,575.83 1016.18,569.73 1025.56,580.15 1034.95,578.03 1044.33,587.01 1053.71,588.69 1063.09,590.29 1072.47,589.92 1081.85,598.09 1091.24,599.09 1100.62,600.16 1110.00,604.02"/>
+<polyline class="avg" points="78.00,606.20 87.38,605.78 96.76,603.55 106.15,604.25 115.53,580.88 124.91,592.01 134.29,598.02 143.67,574.04 153.05,585.12 162.44,589.75 171.82,582.68 181.20,586.30 190.58,586.19 199.96,587.65 209.35,588.10 218.73,587.48 228.11,588.31 237.49,589.20 246.87,587.81 256.25,587.82 265.64,585.58 275.02,586.71 284.40,586.75 293.78,588.39 303.16,587.19 312.55,587.56 321.93,588.09 331.31,588.52 340.69,587.21 350.07,586.79 359.45,586.55 368.84,586.16 378.22,587.31 387.60,587.14 396.98,588.71 406.36,587.89 415.75,588.10 425.13,588.86 434.51,587.64 443.89,587.67 453.27,588.11 462.65,583.49 472.04,582.83 481.42,586.40 490.80,586.44 500.18,585.84 509.56,584.69 518.95,587.59 528.33,584.96 537.71,583.69 547.09,564.04 556.47,575.92 565.85,585.55 575.24,580.57 584.62,585.59 594.00,583.83 603.38,570.20 612.76,583.75 622.15,586.48 631.53,586.08 640.91,586.64 650.29,584.89 659.67,582.16 669.05,586.16 678.44,585.29 687.82,585.91 697.20,585.17 706.58,585.90 715.96,585.98 725.35,586.52 734.73,586.82 744.11,584.82 753.49,583.40 762.87,584.55 772.25,586.10 781.64,583.72 791.02,585.51 800.40,586.93 809.78,585.40 819.16,585.74 828.55,586.52 837.93,587.64 847.31,583.66 856.69,584.81 866.07,587.26 875.45,586.44 884.84,585.70 894.22,587.02 903.60,585.01 912.98,586.05 922.36,586.25 931.75,585.88 941.13,585.35 950.51,586.64 959.89,586.03 969.27,585.82 978.65,585.99 988.04,585.49 997.42,586.38 1006.80,585.98 1016.18,587.43 1025.56,589.19 1034.95,591.06 1044.33,594.29 1053.71,597.83 1063.09,599.68 1072.47,600.79 1081.85,604.61 1091.24,605.53 1100.62,606.20 1110.00,606.83"/>
+<rect x="735" y="12" width="350" height="62" fill="#ffffff" stroke="#e5e7eb"/>
+<line x1="750" y1="27" x2="774" y2="27" stroke="#2563eb" stroke-width="3"/>
+<text class="legend" x="780" y="31">avg latency</text>
+<line x1="915" y1="27" x2="939" y2="27" stroke="#dc2626" stroke-width="3"/>
+<text class="legend" x="945" y="31">p95 latency</text>
+<line x1="750" y1="51" x2="774" y2="51" stroke="#7c3aed" stroke-width="3"/>
+<text class="legend" x="780" y="55">max latency</text>
+<rect x="915" y="45" width="22" height="12" fill="#f59e0b" opacity=".45"/>
+<text class="legend" x="945" y="55">cache misses/sec</text>
+<circle cx="275.02" cy="578.07" r="4" fill="#dc2626"/>
+<text class="label" x="281.02" y="572.07">21s miss 690</text>
+<circle cx="181.20" cy="573.33" r="4" fill="#dc2626"/>
+<text class="label" x="187.20" y="567.33">11s miss 679</text>
+<circle cx="87.38" cy="601.20" r="4" fill="#dc2626"/>
+<text class="label" x="93.38" y="595.20">1s miss 620</text>
+<circle cx="368.84" cy="576.11" r="4" fill="#dc2626"/>
+<text class="label" x="374.84" y="570.11">31s miss 617</text>
+<circle cx="753.49" cy="576.61" r="4" fill="#dc2626"/>
+<text class="label" x="759.49" y="570.61">72s miss 586</text>
+</svg>

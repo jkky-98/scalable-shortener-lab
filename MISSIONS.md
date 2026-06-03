@@ -20,6 +20,8 @@
 | **M-06A** | Redis Cache (ramp) | 400 | 4210 |        32        |        64        |      0%       |    13%     | 99.52% hit, read load moved to Redis |
 | **M-06A** | Redis Cache (400 VU sustain) | 400 | 5572 |        52        |        80        |      0%       |    11%     | 100% hit, DB read effectively removed |
 | **M-07** | App x1 Stop Failover | 400 | 5663 |        53        |        79        |      0%       |    13%     | 0% 502, Nginx routed to healthy apps |
+| **M-08A** | Hot Key TTL 10s | 400 | 5964 |        50        |        74        |      0%       |    12%     | 10s miss bursts observed, no DB saturation |
+| **M-08B** | Random Key TTL 10s | 400 | 5563 |        55        |        86        |      0%       |    18%     | More misses, distributed TTL churn |
 
 ---
 
@@ -336,6 +338,26 @@
     - Docker stats에서 DB CPU spike가 함께 나타나는지 확인한다.
     - hot key 1개와 random key 1,000개 조건의 miss 분포와 latency spike를 비교한다.
     - spike가 확인되면 현재 read-through cache에는 stampede 방지(single-flight, lock, TTL jitter 등)가 없다는 결론을 기록한다.
+- **Result (M08-A, 2026-06-03, hot key 1개):**
+    - 400 VU, `SHORTENER_CACHE_TTL_SECONDS=10`, `HOT_KEY_COUNT=1`.
+    - 5964.5 RPS, avg 50.5ms, p95 74.3ms, max 981.3ms, fail 0%.
+    - Cache hit ratio는 99.95%였다. `shortener_cache_hit` 655,912건, `shortener_cache_miss` 286건, cache error 0건이었다.
+    - 초 단위 분석 기준 miss는 12개 초에만 발생했다. TTL 10초 주기에 맞춰 `cache_misses`가 반복 증가했으며, 가장 뚜렷한 구간은 13:59:16의 miss 21건, p95 159.0ms, max 696.7ms였다.
+    - Docker stats summary 기준 Redis max CPU 9.91%, DB max CPU 12.29%, Nginx max CPU 43.70%, App max CPU 97.11~100.32%였다.
+    - Graph: `missions/missions-08/results/mission-08a-hot-key-ttl-timeseries.svg`
+- **Result (M08-B, 2026-06-03, random key 1,000개):**
+    - 400 VU, `SHORTENER_CACHE_TTL_SECONDS=10`, 1,000개 key 랜덤 조회.
+    - 5563.3 RPS, avg 54.8ms, p95 86.0ms, max 1230.8ms, fail 0%.
+    - Cache hit ratio는 98.15%였다. `shortener_cache_hit` 600,726건, `shortener_cache_miss` 11,310건, cache error 0건이었다.
+    - 초 단위 분석 기준 miss는 52개 초에 분산됐다. 상위 miss 구간은 14:09:22의 miss 690건, 14:09:12의 miss 679건, 14:09:02의 miss 620건이었다.
+    - Docker stats summary 기준 Redis max CPU 9.61%, DB max CPU 17.98%, Nginx max CPU 38.49%, App max CPU 51.00~59.47%였다.
+    - Graph: `missions/missions-08/results/mission-08b-random-ttl-timeseries.svg`
+- **Conclusion:**
+    - TTL 10초 만료에 따른 cache miss 재발생은 명확히 관측됐다.
+    - Hot key 1개 조건은 miss 총량은 적었지만 TTL 주기에 맞는 burst가 선명했다. 현재 read-through 구현에는 single-flight/per-key lock이 없으므로, 만료 순간 같은 key에 대한 중복 MySQL 조회가 발생한다.
+    - Random key 1,000개 조건은 miss 총량이 11,310건으로 크게 늘었지만 52개 초에 분산됐다. 이는 hot key stampede라기보다 여러 key의 TTL 만료가 계속 흩어져 발생하는 TTL churn에 가깝다.
+    - 두 조건 모두 DB CPU max는 18% 이하였고 fail rate는 0%였다. 현재 데이터 크기와 DB 리소스에서는 TTL miss burst가 DB 병목으로 확대되지는 않았다.
+    - 따라서 현재 구조는 stampede 방어가 없다는 구조적 한계는 있지만, 이번 400 VU/1,000 key 조건에서는 Redis/MySQL 병목이나 사용자-visible 장애로 이어지지 않았다. 향후 더 큰 데이터, 더 비싼 DB read, 더 높은 VU에서는 single-flight, per-key lock, TTL jitter, background refresh를 검토해야 한다.
 
 ---
 
